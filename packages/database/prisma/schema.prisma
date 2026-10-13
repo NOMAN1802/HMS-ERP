@@ -32,6 +32,46 @@ model Tenant {
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
   version   Int          @default(1)
 
+  facilities Facility[]
+
   @@map("tenant")
+  @@schema("hms")
+}
+
+// Tenant-owned tables carry tenant_id, UNIQUE (tenant_id, id), and composite foreign keys to
+// their parents, so a child can never point at another tenant's row (ADR-003, E §6).
+// Row-level security for every tenant-owned table is added in SQL in the same migration.
+
+model Facility {
+  tenantId String  @map("tenant_id") @db.Uuid
+  id       String  @id @default(uuid(7)) @db.Uuid
+  code     String
+  nameEn   String? @map("name_en")
+  nameBn   String? @map("name_bn")
+  timezone String  @default("Asia/Dhaka")
+  version  Int     @default(1)
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  departments Department[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, code])
+  @@map("facility")
+  @@schema("hms")
+}
+
+model Department {
+  tenantId   String  @map("tenant_id") @db.Uuid
+  id         String  @id @default(uuid(7)) @db.Uuid
+  facilityId String  @map("facility_id") @db.Uuid
+  code       String
+  nameEn     String? @map("name_en")
+  nameBn     String? @map("name_bn")
+
+  facility Facility @relation(fields: [tenantId, facilityId], references: [tenantId, id])
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, facilityId, code])
+  @@map("department")
   @@schema("hms")
 }

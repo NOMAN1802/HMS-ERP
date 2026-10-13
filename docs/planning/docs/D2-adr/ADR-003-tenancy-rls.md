@@ -44,3 +44,18 @@ On PostgreSQL 18 with Prisma 7.10 + `@prisma/adapter-pg`:
 5. `hms_app` cannot `UPDATE` audit rows.
 
 Draft SQL for these was checked on a scratch PostgreSQL 18.4 ([E §13](../E-database-design.md#13-validation-performed-on-the-draft-sql)).
+
+## Evidence recorded (T-FND-04, 2026-10-13)
+
+PostgreSQL 17.11 (ADR-019), Prisma 7.10 + `@prisma/adapter-pg`, as `hms_app`. Tests: `packages/database/src/with-tenant.int.test.ts`. Migration: `20261013112515_tenant_rls`.
+
+| Item | Result |
+| --- | --- |
+| 1. Concurrent requests (40 interleaved, pool of 4) | Pass: no cross-tenant rows |
+| 2. Context after a failed transaction (pool of 1) | Pass: `app.tenant_id` is empty, zero rows visible |
+| 3. Missing context | Pass: zero rows; insert rejected by RLS |
+| 4. Cross-tenant composite foreign key | Pass: rejected. A wrong-tenant write is also rejected by RLS |
+| 5. `hms_app` cannot UPDATE audit rows | Not yet: audit table arrives with T-PLT-02 |
+| RLS coverage check (T-DB-02) | Pass. A probe table with `tenant_id` and no RLS made it fail as intended |
+
+All 8 tests passed on local Docker and on Supabase through the **transaction pooler** (port 6543). `withTenant()` waits up to 5 s for a pooled connection (`maxWait`); Prisma's 2 s default was too short for 40 queued transactions over the Bangladesh–Singapore link.
