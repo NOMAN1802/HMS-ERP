@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+# =====================================================================================
+# TEMPLATE — UNTESTED. One-off migration image: applies Prisma migrations (which include the
+# hand-written SQL for RLS, exclusion constraints, grants — see docs/E-database-design.md §7)
+# and then runs the RLS coverage check. Runs as the hms_migrator database role.
+#   docker compose -f compose.prod.yaml run --rm migrate
+# =====================================================================================
+ARG NODE_IMAGE=node:24-bookworm-slim@sha256:<<PIN_DIGEST>>
+ARG TURBO_VERSION=<<PIN e.g. 2.11.7>>
+
+FROM ${NODE_IMAGE} AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN corepack enable
+WORKDIR /repo
+
+FROM base AS pruner
+ARG TURBO_VERSION
+RUN npm install -g turbo@${TURBO_VERSION}
+COPY . .
+RUN turbo prune @hms/database --docker
+
+FROM base AS deps
+COPY --from=pruner /repo/out/json/ .
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile
+COPY --from=pruner /repo/out/full/ .
+
+FROM deps AS runner
+ENV NODE_ENV=production
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && chown -R node:node /repo
+USER node
+# migrate.sh (in packages/database/scripts) is expected to:
+#   1. build DATABASE_URL from DB_HOST/DB_PORT/DB_NAME/DB_MIGRATOR_USER and the password in $DB_MIGRATOR_PASSWORD_FILE
+#   2. run `pnpm --filter @hms/database exec prisma migrate deploy`
+#   3. run the RLS coverage query (E §6.3) and exit non-zero if any table is uncovered
+#   4. print applied migration IDs for the release record
+CMD ["sh", "packages/database/scripts/migrate.sh"]

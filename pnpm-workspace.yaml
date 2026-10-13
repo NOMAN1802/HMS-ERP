@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Exact versions in package.json; the lockfile is authoritative (D1 §4, docs/STACK_VERSIONS.md).
+# pnpm's minimumReleaseAge supply-chain check stays on: pick an older release rather than adding exclusions.
+savePrefix: ''
+
+# Only these packages may run install scripts (pnpm blocks all others).
+allowBuilds:
+  '@prisma/engines': true
+  '@swc/core': true
+  prisma: true

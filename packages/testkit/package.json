@@ -1,0 +1,25 @@
+{
+  "name": "@hms/testkit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hms/contracts": "workspace:*",
+    "@hms/database": "workspace:*"
+  },
+  "devDependencies": {
+    "@hms/config-typescript": "workspace:*"
+  }
+}

@@ -1,0 +1,36 @@
+# Local development services. Apps (web/api/worker) run on the host with `pnpm dev`.
+# Ports bind to 127.0.0.1 only. Synthetic data only (AS-009).
+# PostgreSQL major matches Supabase (17, ADR-019). Valkey replaces Redis (ADR-006 amendment).
+name: hms-dev
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: devpassword # DEV ONLY - never reuse
+      POSTGRES_DB: hms
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    ports: ['127.0.0.1:5432:5432']
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d hms']
+      interval: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:9
+    # BullMQ needs noeviction and persistence (D1 §4)
+    command: ['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports: ['127.0.0.1:6379:6379']
+    volumes:
+      - valkey-dev:/data
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata-dev: {}
+  valkey-dev: {}

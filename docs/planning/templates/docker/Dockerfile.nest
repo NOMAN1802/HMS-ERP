@@ -1,0 +1,65 @@
+# syntax=docker/dockerfile:1
+# =====================================================================================
+# TEMPLATE — UNTESTED. Multi-stage image for the NestJS apps (api, worker) in the Turborepo.
+# Not built or executed during documentation work. Placeholders look like <<…>>.
+# Build from the repository root:
+#   docker build -f docker/Dockerfile.nest --build-arg APP=api    -t ghcr.io/<<ORG>>/hms-api:<sha> .
+#   docker build -f docker/Dockerfile.nest --build-arg APP=worker -t ghcr.io/<<ORG>>/hms-worker:<sha> .
+# Assumes workspace package names @hms/api and @hms/worker and a "build" script producing dist/.
+# =====================================================================================
+
+# Pin the base image by digest at scaffold time (D1 §4: Node 24 LTS for the spike).
+ARG NODE_IMAGE=node:24-bookworm-slim@sha256:<<PIN_DIGEST>>
+ARG TURBO_VERSION=<<PIN e.g. 2.11.7>>
+
+# ---------- base: tooling shared by all stages
+FROM ${NODE_IMAGE} AS base
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+# corepack activates the exact pnpm version from package.json "packageManager"
+RUN corepack enable
+WORKDIR /repo
+
+# ---------- pruner: reduce the monorepo to what APP needs (turbo prune --docker)
+FROM base AS pruner
+ARG APP
+ARG TURBO_VERSION
+RUN npm install -g turbo@${TURBO_VERSION}
+COPY . .
+RUN turbo prune @hms/${APP} --docker
+
+# ---------- deps: install dependencies from the pruned lockfile only (good layer caching)
+FROM base AS deps
+COPY --from=pruner /repo/out/json/ .
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# ---------- build: compile, generate Prisma client, create a production-only deployment folder
+FROM deps AS build
+ARG APP
+COPY --from=pruner /repo/out/full/ .
+# Never bake secrets into the image. Build-time variables must be non-secret.
+RUN pnpm turbo run build --filter=@hms/${APP}...
+# pnpm deploy copies the app with production dependencies into /out/app.
+# Verify the required flags for the chosen pnpm major (e.g., inject-workspace-packages) in T-FND-05.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm --filter=@hms/${APP} deploy --prod /out/app
+
+# ---------- runner: minimal runtime, non-root
+FROM ${NODE_IMAGE} AS runner
+ARG APP
+ENV NODE_ENV=production \
+    APP_NAME=${APP}
+WORKDIR /app
+# tini as PID 1 so SIGTERM reaches Node and zombies are reaped (alternatively compose `init: true`)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends tini ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+COPY --from=build --chown=node:node /out/app/ ./
+USER node
+# api listens on 3001; worker exposes a small health server on 9464 (see K §5)
+EXPOSE 3001 9464
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 \
+  CMD node -e "const p=process.env.APP_NAME==='worker'?9464:3001;fetch('http://127.0.0.1:'+p+(process.env.APP_NAME==='worker'?'/health':'/health/live')).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["node", "dist/main.js"]

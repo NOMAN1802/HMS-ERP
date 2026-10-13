@@ -1,0 +1,15 @@
+-- DEV ONLY: runs once when the local Postgres volume is first created.
+-- Role model from E / ADR-003: migrations run as hms_migrator, the application connects as hms_app,
+-- which can never bypass row-level security. Relay/control roles arrive with T-PLT-03 / T-DB-01.
+CREATE ROLE hms_migrator LOGIN CREATEDB PASSWORD 'dev_migrator';
+CREATE ROLE hms_app LOGIN NOBYPASSRLS PASSWORD 'dev_app';
+
+CREATE SCHEMA hms AUTHORIZATION hms_migrator;
+GRANT USAGE ON SCHEMA hms TO hms_app;
+
+-- Tables created by future migrations become usable by the app. Append-only tables revoke
+-- UPDATE/DELETE in their own migration (ADR-009).
+ALTER DEFAULT PRIVILEGES FOR ROLE hms_migrator IN SCHEMA hms
+  GRANT SELECT, INSERT, UPDATE ON TABLES TO hms_app;
+ALTER DEFAULT PRIVILEGES FOR ROLE hms_migrator IN SCHEMA hms
+  GRANT USAGE, SELECT ON SEQUENCES TO hms_app;

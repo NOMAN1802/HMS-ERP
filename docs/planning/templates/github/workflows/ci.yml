@@ -1,0 +1,183 @@
+# =====================================================================================
+# TEMPLATE — UNTESTED. Pull-request pipeline (docs/L-cicd-sonarqube.md §3).
+# Every third-party action MUST be pinned to a full commit SHA (supply-chain incidents in 2025–2026).
+# Replace each <<SHA>> after verifying the release; keep the "# vX.Y.Z" comment for humans.
+# Script names (lint, typecheck, test:unit, test:integration, e2e, contracts:check, i18n:check,
+# boundaries:check, db:migrate:ci, db:drift) are PLACEHOLDERS until T-FND-03 creates them.
+# =====================================================================================
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"             # D1 §4 (re-evaluate Node 26 LTS)
+  TURBO_TELEMETRY_DISABLED: "1"
+  # Remote cache (optional, L §6): set repository secrets TURBO_TOKEN / variables TURBO_TEAM
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX — fetch full history for turbo --affected
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@<<SHA>> # vX — reads "packageManager" from package.json
+      - uses: actions/setup-node@<<SHA>> # vX
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm turbo run lint typecheck --affected     # ESLint incl. eslint-plugin-sonarjs (ADR-012)
+      - run: pnpm boundaries:check                        # dependency-cruiser (NFR-MAINT-001)
+      - run: pnpm i18n:check                              # missing/unused bn-BD/en keys (FR-I18N-002)
+      - run: pnpm contracts:check                         # regenerate OpenAPI from Zod; fail on git diff (H §7)
+      - name: Secret scan (gitleaks CLI; avoids the org licence needed by gitleaks-action)
+        run: |
+          curl -sSfL -o gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v<<GITLEAKS_VERSION>>/gitleaks_<<GITLEAKS_VERSION>>_linux_x64.tar.gz"
+          echo "<<SHA256_OF_ARCHIVE>>  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks git --log-opts="origin/${{ github.base_ref }}..HEAD" --redact --exit-code 1
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:18<<-PIN_MINOR>>        # same major/minor as production
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: hms
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: <<redis:8.x or valkey/valkey:8.x>>
+        ports: ["6379:6379"]
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      CI_DB_SUPERUSER_PASSWORD: ci-only-password
+      REDIS_URL: redis://localhost:6379/0
+      TZ: UTC                                   # tests set the facility timezone explicitly (AT-TIME-*)
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@<<SHA>> # vX
+      - uses: actions/setup-node@<<SHA>> # vX
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate:ci                   # create roles, apply all migrations as hms_migrator, RLS coverage (AT-DB-001)
+      - run: pnpm turbo run test:unit test:integration --affected -- --coverage --ci
+      - name: Isolation suite always runs (NFR-ISO-001)
+        run: pnpm --filter @hms/api test:isolation -- --ci
+      - uses: actions/upload-artifact@<<SHA>> # vX
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            **/coverage/lcov.info
+            **/reports/junit*.xml
+          retention-days: 14
+
+  migrations:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18<<-PIN_MINOR>>
+        env: { POSTGRES_PASSWORD: ci-only-password, POSTGRES_DB: hms }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+        with: { fetch-depth: 0 }
+      - name: Skip unless migrations changed
+        id: changed
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q '^packages/database/'; then echo "run=true" >> "$GITHUB_OUTPUT"; else echo "run=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: pnpm/action-setup@<<SHA>> # vX
+        if: steps.changed.outputs.run == 'true'
+      - uses: actions/setup-node@<<SHA>> # vX
+        if: steps.changed.outputs.run == 'true'
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm }
+      - if: steps.changed.outputs.run == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm db:migrate:ci            # fresh apply (AT-DB-006)
+          pnpm db:drift                 # prisma migrate diff → must be empty
+          pnpm db:upgrade-test          # previous release snapshot + new migrations + old/new smoke (AT-DB-007)
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: [static]
+    services:
+      postgres:
+        image: postgres:18<<-PIN_MINOR>>
+        env: { POSTGRES_PASSWORD: ci-only-password, POSTGRES_DB: hms }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+      redis:
+        image: <<redis:8.x or valkey/valkey:8.x>>
+        ports: ["6379:6379"]
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@<<SHA>> # vX
+      - uses: actions/setup-node@<<SHA>> # vX
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm db:migrate:ci && pnpm db:seed:e2e     # synthetic two-tenant seed
+      - run: pnpm turbo run build --filter=@hms/web... --filter=@hms/api... --filter=@hms/worker...
+      - run: pnpm e2e:affected                          # Playwright, Chromium, tags of affected journeys + axe checks
+      - uses: actions/upload-artifact@<<SHA>> # vX
+        if: failure()
+        with: { name: playwright-report, path: apps/web/playwright-report, retention-days: 14 }
+
+  images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    needs: [static]
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+      - name: Lint Dockerfiles (hadolint, pinned)
+        run: docker run --rm -i hadolint/hadolint:<<PIN>>@sha256:<<DIGEST>> < docker/Dockerfile.nest
+      - uses: docker/setup-buildx-action@<<SHA>> # vX
+      - name: Build (no push) api/worker/web/migrate
+        run: |
+          docker buildx build -f docker/Dockerfile.nest --build-arg APP=api    -t hms-api:pr    --load .
+          docker buildx build -f docker/Dockerfile.nest --build-arg APP=worker -t hms-worker:pr --load .
+          docker buildx build -f docker/Dockerfile.web                          -t hms-web:pr    --load .
+          docker buildx build -f docker/Dockerfile.migrate                      -t hms-migrate:pr --load .
+      - name: Image vulnerability scan (scanner pinned by SHA/digest; fail on CRITICAL)
+        run: echo "<<run Trivy (SHA-pinned, verified release) or Grype against each image; --exit-code 1 on CRITICAL>>"
+
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+      - uses: pnpm/action-setup@<<SHA>> # vX
+      - uses: actions/setup-node@<<SHA>> # vX
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod --audit-level high       # or OSV-Scanner on pnpm-lock.yaml
+
+  ci-ok:                    # single required status check for branch protection
+    if: always()
+    needs: [static, test, migrations, e2e, images, dependencies]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then exit 1; fi

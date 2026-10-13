@@ -1,0 +1,121 @@
+# =====================================================================================
+# TEMPLATE — UNTESTED. Push-to-main pipeline: full tests → SonarQube Community analysis with
+# quality-gate wait → build & push images by digest → deploy to STAGING → staging verification.
+# Production is a separate manual workflow (deploy-production.yml).
+# =====================================================================================
+name: main
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write          # push images to GHCR
+  id-token: write          # build provenance/attestations if enabled
+
+concurrency:
+  group: main
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/hms
+
+jobs:
+  test-full:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:18<<-PIN_MINOR>>
+        env: { POSTGRES_PASSWORD: ci-only-password, POSTGRES_DB: hms }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 20
+      redis:
+        image: <<redis:8.x or valkey/valkey:8.x>>
+        ports: ["6379:6379"]
+    env: { DB_HOST: localhost, CI_DB_SUPERUSER_PASSWORD: ci-only-password, REDIS_URL: "redis://localhost:6379/0" }
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+        with: { fetch-depth: 0 }    # Sonar needs history for blame / new-code detection
+      - uses: pnpm/action-setup@<<SHA>> # vX
+      - uses: actions/setup-node@<<SHA>> # vX
+        with: { node-version: "${{ env.NODE_VERSION }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate:ci
+      - run: pnpm turbo run lint typecheck test:unit test:integration -- --coverage --ci   # full, not --affected
+      - run: pnpm --filter @hms/api test:isolation -- --ci
+      - name: SonarQube Community analysis (main branch only — C-023) and gate wait
+        uses: SonarSource/sonarqube-scan-action@<<SHA>> # vX
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}      # tools VPS (Q-056)
+        with:
+          args: >
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.qualitygate.timeout=600
+            -Dsonar.projectVersion=${{ github.sha }}
+      # A failing gate fails this job → images are not promoted to staging (ADR-012).
+
+  build-images:
+    needs: [test-full]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      api: ${{ steps.digests.outputs.api }}
+      worker: ${{ steps.digests.outputs.worker }}
+      web: ${{ steps.digests.outputs.web }}
+      migrate: ${{ steps.digests.outputs.migrate }}
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+      - uses: docker/setup-buildx-action@<<SHA>> # vX
+      - uses: docker/login-action@<<SHA>> # vX
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - name: Build, scan and push (tag = sha; deploy by digest)
+        id: digests
+        run: |
+          set -euo pipefail
+          build() { # $1=name $2=dockerfile $3=extra args
+            docker buildx build -f "$2" $3 -t "${IMAGE_PREFIX}-$1:sha-${GITHUB_SHA}" --push \
+              --metadata-file "/tmp/$1.json" .
+            echo "$1=$(jq -r '."containerimage.digest"' /tmp/$1.json)" >> "$GITHUB_OUTPUT"
+          }
+          build api     docker/Dockerfile.nest    "--build-arg APP=api"
+          build worker  docker/Dockerfile.nest    "--build-arg APP=worker"
+          build web     docker/Dockerfile.web     ""
+          build migrate docker/Dockerfile.migrate ""
+          # <<image scan of pushed digests; fail on CRITICAL (L §5)>>
+      - name: Release manifest
+        run: |
+          cat > release.env <<EOF
+          GIT_SHA=${GITHUB_SHA}
+          API_DIGEST=${{ steps.digests.outputs.api }}
+          WORKER_DIGEST=${{ steps.digests.outputs.worker }}
+          WEB_DIGEST=${{ steps.digests.outputs.web }}
+          MIGRATE_DIGEST=${{ steps.digests.outputs.migrate }}
+          EOF
+      - uses: actions/upload-artifact@<<SHA>> # vX
+        with: { name: release-manifest, path: release.env, retention-days: 90 }
+
+  deploy-staging:
+    needs: [build-images]
+    runs-on: ubuntu-24.04
+    environment: staging          # environment secrets (requires GitHub Pro/Team/Enterprise for private repos)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@<<SHA>> # vX
+        with: { name: release-manifest }
+      - name: Deploy over SSH (restricted deploy user; forced command runs /opt/hms/bin/deploy.sh)
+        env:
+          SSH_KEY: ${{ secrets.STAGING_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.STAGING_KNOWN_HOSTS }}
+          HOST: ${{ vars.STAGING_HOST }}
+        run: |
+          install -m 600 /dev/null key && printf '%s\n' "$SSH_KEY" > key
+          printf '%s\n' "$KNOWN_HOSTS" > known_hosts
+          # deploy.sh: pull digests → run migrate → recreate api, worker, web → health wait → print status
+          ssh -i key -o UserKnownHostsFile=known_hosts deploy@"$HOST" < release.env
+      - name: Staging smoke + E2E against the deployed build
+        run: echo "<<pnpm e2e:staging --base-url https://staging.example.invalid (synthetic tenant)>>"

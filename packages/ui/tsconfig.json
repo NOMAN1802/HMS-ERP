@@ -1,0 +1,7 @@
+{
+  "extends": "@hms/config-typescript/library.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "es2024"],
+    "jsx": "react-jsx"
+  }
+}

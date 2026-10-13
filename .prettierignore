@@ -1,0 +1,7 @@
+docs/planning/
+docs/source-pdfs/
+pnpm-lock.yaml
+**/generated/
+**/.next/
+**/dist/
+**/next-env.d.ts

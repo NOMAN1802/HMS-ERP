@@ -1,0 +1,23 @@
+# TEMPLATE — UNTESTED. Dependabot version updates (security alerts are free on all plans).
+# Grouped weekly updates keep PR volume manageable; the integrator reviews lockfile changes (G §6).
+version: 2
+updates:
+  - package-ecosystem: "npm"          # pnpm workspaces are handled by the npm ecosystem
+    directory: "/"
+    schedule: { interval: "weekly", day: "monday", time: "03:00", timezone: "Asia/Dhaka" }
+    open-pull-requests-limit: 5
+    groups:
+      nest:      { patterns: ["@nestjs/*"] }
+      next-react: { patterns: ["next", "react", "react-dom", "@next/*"] }
+      prisma:    { patterns: ["prisma", "@prisma/*"] }     # keep CLI and client identical (CX-017)
+      tanstack:  { patterns: ["@tanstack/*"] }
+      testing:   { patterns: ["jest", "ts-jest", "@playwright/test", "@axe-core/*", "supertest"] }
+    ignore:
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]      # TS 7 blocked until ts-jest / Nest CLI support it (CX-018)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: { interval: "weekly" }  # updates SHA pins; review release notes before merging
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule: { interval: "weekly" }

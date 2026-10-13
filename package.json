@@ -1,0 +1,40 @@
+{
+  "name": "hms",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=24.9.0 <25"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "boundaries:check": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "services:up": "docker compose -f docker/compose.dev.yaml up -d --wait",
+    "services:down": "docker compose -f docker/compose.dev.yaml down",
+    "db:generate": "pnpm --filter @hms/database db:generate",
+    "db:migrate": "pnpm --filter @hms/database db:migrate",
+    "db:deploy": "pnpm --filter @hms/database db:deploy",
+    "db:studio": "pnpm --filter @hms/database db:studio"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.0.4",
+    "dependency-cruiser": "18.6.0",
+    "eslint": "10.12.0",
+    "eslint-plugin-sonarjs": "4.2.2",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "turbo": "2.11.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.4"
+  }
+}

@@ -1,0 +1,44 @@
+# =====================================================================================
+# TEMPLATE — UNTESTED. Local development services. Apps (web/api/worker) run on the host with
+# `pnpm dev` (hot reload) and connect to these containers. Synthetic data only (AS-009).
+# Ports are bound to 127.0.0.1 so they are not exposed on the network.
+# =====================================================================================
+name: hms-dev
+
+services:
+  postgres:
+    image: postgres:18<<-PIN_MINOR>>
+    environment:
+      POSTGRES_PASSWORD: devpassword          # DEV ONLY — never reuse
+      POSTGRES_DB: hms
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pgdata-dev:/var/lib/postgresql
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro   # creates hms_owner/hms_migrator/hms_app/... with dev passwords
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hms"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: <<redis:8.x or valkey/valkey:8.x>>
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports: ["127.0.0.1:6379:6379"]
+
+  object-storage:
+    # Any maintained S3-compatible server for local dev (e.g., SeaweedFS S3 gateway). Not MinIO CE (ADR-014).
+    image: <<S3_COMPATIBLE_DEV_IMAGE>>
+    ports: ["127.0.0.1:8333:8333"]
+
+  mail:
+    # Local mail catcher for invitation/password emails (any SMTP sink image)
+    image: <<SMTP_SINK_IMAGE>>
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+
+  pdf-renderer:
+    image: <<PDF_RENDERER_IMAGE>>
+    ports: ["127.0.0.1:3010:3000"]
+
+volumes:
+  pgdata-dev: {}

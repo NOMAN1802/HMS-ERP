@@ -1,0 +1,66 @@
+# =====================================================================================
+# TEMPLATE — UNTESTED. Manual production deployment of a release manifest that already passed
+# staging (J §9.1). GitHub "required reviewers" on environments are unavailable for PRIVATE repos
+# below Enterprise (CX-014), so this workflow enforces an explicit maintainer allow-list and
+# requires the staging run to have succeeded for the same commit.
+# =====================================================================================
+name: deploy-production
+
+on:
+  workflow_dispatch:
+    inputs:
+      main_run_id:
+        description: "Run ID of the successful 'main' workflow whose release manifest to deploy"
+        required: true
+      change_ticket:
+        description: "Change/release record ID (release notes, migration class, rollback plan)"
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Only approved maintainers may deploy
+        run: |
+          case "${{ github.actor }}" in
+            <<maintainer-1>>|<<maintainer-2>>) echo "allowed";;
+            *) echo "actor not allowed"; exit 1;;
+          esac
+      - name: Source run must be a successful main run (staging deployed + verified)
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          conclusion=$(gh run view "${{ inputs.main_run_id }}" --repo "${{ github.repository }}" --json conclusion,headBranch -q '.conclusion + ":" + .headBranch')
+          test "$conclusion" = "success:main"
+
+  deploy:
+    needs: [guard]
+    runs-on: ubuntu-24.04
+    environment: production       # holds production secrets (Pro/Team/Enterprise for private repos)
+    timeout-minutes: 45
+    steps:
+      - name: Fetch release manifest from the main run
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh run download "${{ inputs.main_run_id }}" --repo "${{ github.repository }}" -n release-manifest
+      - name: Pre-flight checks on production (backup age, WAL archive, disk, active incidents)
+        run: echo "<<ssh deploy@prod preflight — fails if backup older than 26h or WAL archive lag > 5 min (J §9.1)>>"
+      - name: Deploy (migrate → api → worker → web) over SSH forced command
+        env:
+          SSH_KEY: ${{ secrets.PROD_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+          HOST: ${{ vars.PROD_HOST }}
+        run: |
+          install -m 600 /dev/null key && printf '%s\n' "$SSH_KEY" > key
+          printf '%s\n' "$KNOWN_HOSTS" > known_hosts
+          ssh -i key -o UserKnownHostsFile=known_hosts deploy@"$HOST" < release.env
+      - name: Production smoke tests (synthetic monitoring tenant; read-only workflow)
+        run: echo "<<pnpm smoke:prod — login as synthetic monitor, open patient, open released report, check health>>"
+      - name: Record release
+        run: echo "Deployed $(grep GIT_SHA release.env) for change ${{ inputs.change_ticket }}"

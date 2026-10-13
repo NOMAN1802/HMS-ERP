@@ -1,0 +1,56 @@
+# =====================================================================================
+# TEMPLATE — UNTESTED. Caddy reverse proxy for T0 (J §5). Replace <<…>> placeholders.
+# Automatic HTTPS requires the DNS A/AAAA record to point at this VPS and ports 80/443 open.
+# =====================================================================================
+{
+	email <<ops-contact@example.invalid>>
+	# servers { trusted_proxies static <<provider LB ranges>> }   # only if a load balancer is added (T3)
+}
+
+<<app.example.invalid>> {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# CSP: tighten after the scaffold inventories script/style sources (fonts are self-hosted)
+		Content-Security-Policy "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	request_body {
+		max_size 10MB
+	}
+
+	# API → NestJS replicas (Compose DNS returns all replica IPs for "api")
+	handle /api/* {
+		reverse_proxy api:3001 {
+			lb_policy round_robin
+			lb_try_duration 10s          # absorb container restarts during deploys
+			health_uri /health/ready
+			health_interval 10s
+			header_up X-Request-Id {http.request.uuid}
+		}
+	}
+
+	# Everything else → Next.js
+	handle {
+		reverse_proxy web:3000 {
+			lb_try_duration 5s
+		}
+	}
+
+	log {
+		output stdout
+		format json
+		# Avoid logging query strings, which may contain identifiers; keep method, path, status, duration.
+	}
+
+	handle_errors {
+		@unavailable expression `{err.status_code} in [502, 503, 504]`
+		respond @unavailable "Service temporarily unavailable. Please use the downtime procedure. / সাময়িকভাবে সেবা বন্ধ আছে।" 503
+	}
+}

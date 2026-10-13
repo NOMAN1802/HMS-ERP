@@ -1,0 +1,40 @@
+# =====================================================================================
+# TEMPLATE — UNTESTED. Nightly: full E2E (Chromium + Firefox), print-view visual snapshots,
+# security re-scans of deployed images, dependency audit. Times in UTC (19:00 UTC = 01:00 Asia/Dhaka).
+# =====================================================================================
+name: nightly
+
+on:
+  schedule:
+    - cron: "0 19 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-full:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+      - uses: pnpm/action-setup@<<SHA>> # vX
+      - uses: actions/setup-node@<<SHA>> # vX
+        with: { node-version: "24", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+      - run: echo "<<start services + seed synthetic tenants as in ci.yml e2e job>>"
+      - run: pnpm e2e:full -- --project=${{ matrix.browser }}
+      - run: pnpm e2e:print-snapshots -- --project=${{ matrix.browser }}   # bn/en receipts, reports, labels
+
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@<<SHA>> # vX
+      - run: echo "<<re-scan currently deployed staging/production digests (scanner pinned by SHA)>>"
+      - run: echo "<<OSV-Scanner / pnpm audit on pnpm-lock.yaml; open an issue on new HIGH/CRITICAL>>"
