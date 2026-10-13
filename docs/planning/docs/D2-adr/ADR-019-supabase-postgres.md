@@ -26,6 +26,14 @@
 - Whether required extensions (`btree_gist` for bed occupancy, `pg_trgm` for patient search) are available. Both are in Supabase's extension list but must be enabled and tested.
 - Backup and restore drill (RB-07) against Supabase's backup feature, replacing pgBackRest.
 
+## Results on 2026-10-13 (project in ap-southeast-1)
+
+- Server is PostgreSQL **17.11**, the same as local Docker.
+- The Supabase `postgres` role has CREATEROLE and BYPASSRLS (not superuser). `hms_migrator` and `hms_app` were created with `NOBYPASSRLS` using `docker/postgres/supabase/10-roles.sql`. Creating the `BYPASSRLS` roles (`hms_relay`, `hms_control`) is still untested.
+- `btree_gist` 1.7 and `pg_trgm` 1.6 are available (not yet enabled).
+- `prisma migrate deploy` as `hms_migrator` through the session pooler applied the first migration. `hms_app` reads `hms.tenant` through the transaction pooler. `anon` and `authenticated` have no usage on schema `hms`.
+- Still to do in the dashboard: disable the Data API (Project Settings → Data API). Backup/restore drill not done.
+
 ## Consequences
 
 - Positive: no database server to patch, back up or monitor on the droplet. The droplet keeps RAM for the apps.
