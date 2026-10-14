@@ -75,6 +75,23 @@ describe('identity tables', () => {
     ).rejects.toThrow(/permission denied/);
   });
 
+  it("cannot move another hospital's membership into the current hospital", async () => {
+    const otherTenantId = randomUUID();
+    await withTenant(prisma, { tenantId: otherTenantId }, async (tx) => {
+      await tx.tenant.create({
+        data: { id: otherTenantId, code: `test-${otherTenantId.slice(0, 8)}`, nameEn: 'Other' },
+      });
+      await tx.membership.create({ data: { tenantId: otherTenantId, userId: strangerId } });
+    });
+    const moved = await withTenant(prisma, { tenantId, userId: strangerId }, (tx) =>
+      tx.membership.updateMany({
+        where: { userId: strangerId, tenantId: otherTenantId },
+        data: { tenantId },
+      }),
+    );
+    expect(moved.count).toBe(0);
+  });
+
   it('does not allow the app to update auth events', async () => {
     const event = await prisma.authEvent.create({
       data: { action: 'auth.login.failed', outcome: 'FAILED', usernameAttempted: 'nobody' },

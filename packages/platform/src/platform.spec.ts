@@ -18,6 +18,11 @@ class ProbeController {
     });
   }
 
+  @Get('override')
+  override(): never {
+    throw new DomainError('ACCOUNT_LOCKED', 'Account locked', { status: 200, code: 'FAKE' });
+  }
+
   @Get('crash')
   crash(): never {
     throw new Error('database password is secret');
@@ -75,6 +80,24 @@ describe('platform HTTP pieces', () => {
     const body = await res.json();
     expect(body.code).toBe('VALIDATION_FAILED');
     expect(body.fields[0].path).toBe('name');
+  });
+
+  it('keeps the real status and code when details try to override them', async () => {
+    const res = await fetch(`${base}/probe/override`);
+    expect(res.status).toBe(423);
+    expect((await res.json()).code).toBe('ACCOUNT_LOCKED');
+  });
+
+  it('answers malformed JSON with a 400 and no parser internals', async () => {
+    const res = await fetch(`${base}/probe/echo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{bad',
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe('VALIDATION_FAILED');
+    expect(body.title).not.toMatch(/json|position|token/i);
   });
 
   it('maps an unknown route to NOT_FOUND', async () => {

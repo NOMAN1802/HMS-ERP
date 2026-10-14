@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createPrismaClient, type PrismaClient } from '@hms/database';
+import { createPrismaClient, withTenant, type PrismaClient } from '@hms/database';
 import { DomainError, fixedClock, type FixedClock } from '@hms/domain-kernel';
 import { seedMembership, seedTenant, seedUser } from '@hms/testkit';
 import { hashPassword } from '../infrastructure/password-hasher.js';
@@ -136,6 +136,52 @@ describe('AuthService', () => {
       clock.advanceBy(10 * 60_000);
     }
     expect(await service.resolveSession(token)).toBeNull();
+  });
+
+  it('ends an active session when the account is disabled (FR-ACC-010)', async () => {
+    const user = await userWithHospitals(1);
+    const { token } = await login(user.username);
+    await prisma.userAccount.update({ where: { id: user.id }, data: { status: 'DISABLED' } });
+    expect(await service.resolveSession(token)).toBeNull();
+  });
+
+  it('ends an active session when the membership is suspended (FR-ACC-010)', async () => {
+    const user = await userWithHospitals(1);
+    const { token } = await login(user.username);
+    const tenantId = (await service.resolveSession(token))?.tenantId ?? '';
+    await withTenant(prisma, { tenantId }, (tx) =>
+      tx.membership.update({
+        where: { id: user.memberships[0] ?? '' },
+        data: { status: 'SUSPENDED' },
+      }),
+    );
+    expect(await service.resolveSession(token)).toBeNull();
+  });
+
+  it('keeps the original absolute expiry when switching hospital', async () => {
+    const user = await userWithHospitals(2);
+    const first = await login(user.username);
+    clock.advanceBy(30 * 60_000);
+    const ctx = await service.resolveSession(first.token);
+    const second = await service.selectMembership(ctx!, user.memberships[1]!, meta);
+    expect(second.session.absoluteExpiresAt).toBe(first.session.absoluteExpiresAt);
+  });
+
+  it('does not reveal a lock or disabled state without the right password', async () => {
+    const locked = await seedUser(prisma, { passwordHash, status: 'LOCKED_ADMIN' });
+    await expectCode(login(locked.username, 'wrong'), 'INVALID_CREDENTIALS');
+    const disabled = await seedUser(prisma, { passwordHash, status: 'DISABLED' });
+    await expectCode(login(disabled.username), 'INVALID_CREDENTIALS');
+  });
+
+  it('does not store a password-like username in the auth event', async () => {
+    await expectCode(login('My Secret Passw0rd With Spaces!', 'x'), 'INVALID_CREDENTIALS');
+    const events = await prisma.authEvent.findMany({
+      where: { reason: 'UNKNOWN_USER' },
+      orderBy: { occurredAt: 'desc' },
+      take: 20,
+    });
+    expect(events.some((e) => e.usernameAttempted?.includes('secret'))).toBe(false);
   });
 
   it('logout revokes the session', async () => {

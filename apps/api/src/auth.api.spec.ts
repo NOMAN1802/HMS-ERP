@@ -90,7 +90,7 @@ describe('auth over HTTP', () => {
     const res = await login(user.username);
     expect(res.status).toBe(200);
     const setCookie = res.headers.get('set-cookie') ?? '';
-    expect(setCookie).toMatch(/^hms_session=/);
+    expect(setCookie).toMatch(/^__Host-hms_session=/);
     expect(setCookie).toMatch(/HttpOnly/i);
     expect(setCookie).toMatch(/Secure/i);
     expect(setCookie).toMatch(/SameSite=Lax/i);
@@ -163,6 +163,29 @@ describe('auth over HTTP', () => {
     expect((await login(user.username)).status).toBe(200);
   });
 
+  it('rejects a login from a foreign origin (login CSRF)', async () => {
+    const user = await seedLogin(1);
+    const res = await fetch(`${base}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: 'https://evil.bytespate.com' },
+      body: JSON.stringify({ username: user.username, password: PASSWORD }),
+    });
+    expect(res.status).toBe(403);
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('does not store a client-supplied request id that is not a safe token', async () => {
+    const user = await seedLogin(1);
+    await fetch(`${base}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Request-Id': 'bad id; drop table' },
+      body: JSON.stringify({ username: user.username, password: 'wrong' }),
+    });
+    const events = await prisma.authEvent.findMany({ where: { userId: user.id } });
+    expect(events).not.toHaveLength(0);
+    expect(events.every((e) => e.correlationId === null)).toBe(true);
+  });
+
   it('returns 422 for an empty username', async () => {
     const res = await login('');
     expect(res.status).toBe(422);
@@ -178,7 +201,7 @@ describe('auth over HTTP', () => {
       headers: { Cookie: cookie, Origin: WEB, 'X-CSRF-Token': csrfToken },
     });
     expect(out.status).toBe(204);
-    expect(out.headers.get('set-cookie')).toMatch(/hms_session=;/);
+    expect(out.headers.get('set-cookie')).toMatch(/__Host-hms_session=;/);
     const after = await fetch(`${base}/auth/session`, { headers: { Cookie: cookie } });
     expect(after.status).toBe(401);
   });

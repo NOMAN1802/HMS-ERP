@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DomainError } from '@hms/domain-kernel';
-import { assertAccountCanLogin, normalizeUsername } from './account-policy.js';
+import {
+  assertAccountCanLogin,
+  isAccountUsable,
+  normalizeUsername,
+  safeUsernameForLog,
+} from './account-policy.js';
 import {
   isSessionExpired,
   newSessionTimes,
@@ -87,5 +92,31 @@ describe('account policy', () => {
       caught = error;
     }
     expect((caught as DomainError).code).toBe('INVALID_CREDENTIALS');
+  });
+});
+
+describe('account policy: hardening (T-ACC-01 review)', () => {
+  it('treats a temporary lock without an end time as still locked', () => {
+    expect(() =>
+      assertAccountCanLogin({ status: 'LOCKED_TEMPORARY', lockedUntil: null }, t0),
+    ).toThrow(/locked/i);
+  });
+
+  it('keeps only username-shaped values for the log', () => {
+    expect(safeUsernameForLog('admin.user')).toBe('admin.user');
+    expect(safeUsernameForLog('has spaces in it')).toBeNull();
+    expect(safeUsernameForLog('ab')).toBeNull();
+    expect(safeUsernameForLog('x'.repeat(65))).toBeNull();
+  });
+
+  it('decides whether an existing session may keep working', () => {
+    const future = new Date(t0.getTime() + minutes(5));
+    const past = new Date(t0.getTime() - 1);
+    expect(isAccountUsable({ status: 'ACTIVE', lockedUntil: null }, t0)).toBe(true);
+    expect(isAccountUsable({ status: 'DISABLED', lockedUntil: null }, t0)).toBe(false);
+    expect(isAccountUsable({ status: 'LOCKED_ADMIN', lockedUntil: null }, t0)).toBe(false);
+    expect(isAccountUsable({ status: 'LOCKED_TEMPORARY', lockedUntil: future }, t0)).toBe(false);
+    expect(isAccountUsable({ status: 'LOCKED_TEMPORARY', lockedUntil: past }, t0)).toBe(true);
+    expect(isAccountUsable({ status: 'LOCKED_TEMPORARY', lockedUntil: null }, t0)).toBe(false);
   });
 });
