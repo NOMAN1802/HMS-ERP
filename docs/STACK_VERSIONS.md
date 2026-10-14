@@ -23,6 +23,9 @@ pnpm's `minimumReleaseAge` supply-chain check is on. Releases less than a day ol
 | Playwright / @axe-core/playwright                  | 1.64.0 / 4.13.0                | Chromium headless shell 156                                                             |
 | ESLint / typescript-eslint / eslint-plugin-sonarjs | 10.12.0 / 8.71.1 / 4.2.2       | typescript-eslint 8.71.2 was < 1 day old                                                |
 | dependency-cruiser                                 | 18.6.0                         |                                                                                         |
+| argon2                                             | 0.45.1                         | Native module; install script allowed in `pnpm-workspace.yaml` (T-ACC-01)               |
+| cookie-parser / @types/cookie-parser               | 1.4.7 / 1.4.10                 | T-ACC-01                                                                                |
+| @types/express                                     | 5.0.6                          | T-ACC-01                                                                                |
 | Prettier                                           | 3.9.10                         |                                                                                         |
 | PostgreSQL (local, CI)                             | 17 (17.11 resolved locally)    | Matches Supabase (ADR-019)                                                              |
 | Valkey (local, CI)                                 | 9 (9.1.2 resolved locally)     | ADR-020                                                                                 |
