@@ -1,6 +1,6 @@
 # ADR-012 — CI quality gates with SonarQube Community Build (main branch only)
 
-- **Status:** PROPOSED (P-016). The CI host (C-022) and Sonar edition (C-023) are CONFIRMED.
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-016). The CI host (C-022) and Sonar edition (C-023) are CONFIRMED; the Sonar server is deferred (C-048).
 - **Date:** 2026-10-12
 - **Approver:** Tech lead
 

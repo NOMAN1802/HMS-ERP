@@ -1,6 +1,6 @@
 # ADR-002 — How Next.js is used
 
-- **Status:** PROPOSED (P-007). Next.js itself is CONFIRMED (C-003).
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-007). Next.js itself is CONFIRMED (C-003). Point 2 (server-side prefetch with the user's cookie) is amended by ADR-021.
 - **Date:** 2026-10-12
 - **Approver:** Tech lead
 

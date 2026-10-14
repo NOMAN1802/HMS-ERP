@@ -1,6 +1,6 @@
 # ADR-013 — Keep Jest on Node ≥ 24.9 with ESM
 
-- **Status:** PROPOSED (P-017). Resolves Q-054 when accepted.
+- **Status:** SUPERSEDED by [ADR-018](ADR-018-vitest.md) on 2026-10-13 (P-017). Q-054 resolved with Vitest.
 - **Date:** 2026-10-12
 - **Approver:** Tech lead
 

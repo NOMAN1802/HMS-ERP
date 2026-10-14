@@ -6,7 +6,7 @@
 | Version | 0.4.0-draft |
 | Status | Confirmed entries are binding; proposed entries await approval |
 | Owner role | Product owner (business decisions); technical architect (engineering proposals) |
-| Updated | 2026-10-12 |
+| Updated | 2026-10-14 (§2.4 Phase 0 answers; ADR approvals in §3) |
 | Supersedes | `baseline/hospital-saas-planning-kit-v0.3/docs/DECISIONS.md` (all v0.3 IDs are kept unchanged) |
 | Related | [A3 Open questions](A3-open-questions.md), [A4 Assumptions and contradictions](A4-assumptions-and-contradictions.md), [ADR index](D2-adr/README.md) |
 
@@ -63,7 +63,7 @@ These appear as requirements in [C02](C-srs/C02-patients-scheduling.md) and [C10
 
 ### 2.2 New confirmed decisions (planning conversation of 2026-10-12)
 
-The requester answered these during this documentation task. If the requester is not the product owner, the product owner should ratify C-022 to C-025 at the next review. Until then they are treated as CONFIRMED.
+The requester answered these during this documentation task. **Ratified by the product owner on 2026-10-14.**
 
 | ID | Decision | Implication | Replaces / resolves |
 | --- | --- | --- | --- |
@@ -82,9 +82,38 @@ The requester answered these during this documentation task. If the requester is
 | C-029 | Baseline integrity requirements are mandatory:<br>• tenant isolation<br>• server-side permission enforcement<br>• audit of sensitive actions<br>• clinical-record integrity (released or signed records are corrected, never overwritten)<br>• financial correctness (exact amounts, no duplicate postings, reconciliation) | These apply to every module, even while government rules are deferred. Mechanisms such as RLS are PROPOSED; the obligations are CONFIRMED. |
 | C-030 | Old delivery-duration and team-size estimates are **not** commitments. | No calendar dates, durations, team sizes or productivity multipliers appear in this pack. |
 
+### 2.4 Phase 0 answers by the product owner (2026-10-14)
+
+Answered by the product owner (Bytespate) on 2026-10-14 for the first release. "Configurable" means the value is the platform default and each hospital may change it through its policy settings (C00 §5); the default itself is the decision.
+
+| ID | Decision | Implication | Resolves |
+| --- | --- | --- | --- |
+| C-031 | The first production release is **RP-A: outpatient + diagnostics** (B §9). | Phases 0–3 before go-live (G §2). Inpatient, pharmacy and stores stay on the legacy system or paper at first. | Q-001 |
+| C-032 | Login security defaults: **TOTP MFA for administrator and finance roles**; sessions end after **60 minutes idle** and **12 hours** at most; an account **locks after 5 failed passwords for 15 minutes** (auto-unlock), and a hospital administrator may unlock it sooner. Configurable per hospital (CP-12). | The idle timeout is longer than the docs' 30-minute proposal because of the nurses' re-login complaints (SRC-N02/N10). | Q-051 |
+| C-033 | MRN format: **hospital prefix + 6-digit continuous number**, never reset, e.g. `SMH-000123`. Pattern `{PREFIX}-{seq:6}`; the prefix is set per hospital (CP-09). | Unique per tenant (fixed rule). | Q-034 |
+| C-034 | Required registration fields: **name** (Bangla or English; at least one), **sex**, **age or date of birth**, **mobile number** (may be left empty only when the patient has none). Address is optional (CP-10). | Phone number is the main duplicate-search key. Unknown-identity emergency registration stays out of RP-A. | Q-035 |
+| C-035 | Doctor queue: **fixed capacity per session, no overbooking, serial number in check-in order; walk-ins join the same queue** (CP-11). | Matches the docs' interim default; configurable per schedule. | Q-037 |
+| C-036 | Digits follow the UI language: **Bangla digits in the Bangla UI, Western digits in the English UI**. Dates `dd-MM-yyyy`. Print language is chosen per template (CP-18). | Native-speaker review of terms still applies (A1). | Q-050 |
+| C-037 | Invoice totals are **rounded to the nearest whole taka**, with the difference shown as an explicit **rounding adjustment line**, so totals always equal the detail (CP-07). | Line amounts stay exact to 2 decimals. The tie rule for exactly ½ taka and rounding of percentage discounts are still open (discounts are not in RP-A). | Q-020 (main part) |
+| C-038 | **No overpayment:** a payment cannot exceed the open balance it pays; the cashier gives change. No patient credit in the first release. | `AMOUNT_EXCEEDS_BALANCE` stays the error. Patient credit and advances come with deposits (Q-004). | Q-022 |
+| C-039 | **One payment may cover several open invoices of the same patient** (e.g. doctor fee + tests), with **one receipt** listing each invoice and amount. | Uses line-level payment allocation (P-020, ADR-016). | Q-024 |
+| C-040 | **No deposits in the first release.** Every service is paid in full before it is done (`FULL_PAYMENT`, CP-02). | The deposit path stays disabled until Q-004/Q-040 are answered for inpatient (RP-B). | Q-004 (for RP-A) |
+| C-041 | Doctor fees: per doctor, a **new-patient fee** and a **follow-up fee** that applies when the patient returns within that doctor's **follow-up window (days, set per doctor)**. Fee reductions/discounts are not implemented. | Price-list items per doctor (CP-05). No product default for the window: it must be entered per doctor. | Q-038 |
+| C-042 | The **cashier both issues invoices and records payments**. The two permissions stay separate (`billing.invoice.issue`, `billing.payment.record`) so a hospital can split them later; both are granted to the Cashier template. | No segregation pair enforced by default (CP-24). All actions are audited. | Q-039 |
+| C-043 | A payment-method correction made after the cashier session closed appears in a **"method corrections" section of the correction day's report**. Closed sessions and reports never change. | Collection reports reconcile with what finance already received. | Q-068 |
+| C-044 | Pilot printers: **A4 laser** for lab reports and prescriptions, **80 mm thermal** for receipts and tokens, a **barcode label printer** for lab samples. Exact models are confirmed in device UAT. | Print templates target A4 and 80 mm first (CP-19). | Q-046 (device classes) |
+| C-045 | Staff roles for the first release: the proposed templates **Receptionist, Cashier (incl. invoice issue, C-042), Billing supervisor, Doctor, Lab technologist, Lab authority, Finance, Hospital administrator, Management viewer** (C01 §5). | Starting set; each hospital still signs off its production role grants. | Q-003 (for RP-A) |
+| C-046 | "100,000 users" means **total registered patient records across hospitals over time**, not daily or concurrent users. | Capacity planning uses the registered-records scenario (M). | Q-041 |
+| C-047 | **GitHub Free plan; all three repositories private.** Deployment reads the private repository with read-only **deploy keys**. | Protected-branch rules for private repositories need a paid plan later. 2,000 free Actions minutes per month. | Q-055 |
+| C-048 | The SonarQube server is **deferred**. Until then, ESLint with SonarJS rules in CI is the quality gate. | C-023 stands; only the server set-up date moves. | Q-056 |
+| C-049 | Supabase **free plan** for development and testing; the Data API is **disabled** (done 2026-10-14). The plan is revisited before any real hospital data. | Free projects pause after 7 days idle (ADR-019). | ADR-019 open items |
+| C-050 | **Development is local for now.** Staging deployment is owned by a team member; domains and hosting are not needed for current work. | ADR-020/021 remain the deployment design. | — |
+
 ## 3. Proposed engineering decisions
 
-All entries are **PROPOSED** until the approver named in the "Approval needed" column accepts them. P-001 to P-006 keep their v0.3 meaning. Later entries refine or add to them. Each consequential proposal has an ADR.
+**Approved by the product owner on 2026-10-14:** P-001, P-002, P-003, P-004 (ADR-001, ADR-003), P-007 (ADR-002), P-008 (ADR-004), P-009 (ADR-005), P-010 (ADR-006), P-016 (ADR-012). **P-017** (ADR-013, Jest) is superseded by ADR-018 (Vitest). **P-021** (version pins) is applied in [`docs/STACK_VERSIONS.md`](../../STACK_VERSIONS.md). The rows below keep their original wording.
+
+All other entries are **PROPOSED** until the approver named in the "Approval needed" column accepts them. P-001 to P-006 keep their v0.3 meaning. Later entries refine or add to them. Each consequential proposal has an ADR.
 
 | ID | Proposal | ADR | Approval needed / evidence |
 | --- | --- | --- | --- |
@@ -130,6 +159,9 @@ All entries are **PROPOSED** until the approver named in the "Approval needed" c
 | v0.3 "Bangla/English scope OPEN" | **C-025**. | Detail questions remain in Q-050. |
 | v0.3 "CI/CD provider OPEN" | **C-022**. | — |
 | v0.3 "SonarQube concrete gate OPEN" | **C-023** + P-016. | — |
+| C-026 "no provider selected" | Partly answered: staging on DigitalOcean SGP1, database on Supabase (ADR-019, ADR-020). | Production server still open. |
+| P-017 / Q-054 (test runner) | **ADR-018** (Vitest). | — |
+| CX-015 (Redis vs Valkey licence) | **ADR-020** (Valkey). | — |
 
 ## 6. How decisions flow into the pack
 

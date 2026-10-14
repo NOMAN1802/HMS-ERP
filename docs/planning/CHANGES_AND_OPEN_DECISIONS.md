@@ -22,17 +22,34 @@ The product owner made these decisions while the repository was scaffolded. They
 - tenant isolation with RLS + `withTenant()` passed ADR-003 evidence items 1–4 on local PostgreSQL 17 and on Supabase's transaction pooler (T-FND-04);
 - the RLS coverage check (T-DB-02) runs in CI.
 
-**New open items from these decisions:**
+**Phase 0 answers (2026-10-14):** the product owner answered the first-slice questions, approved ADR-001..006 and ADR-012, and ratified C-022..C-025. They are recorded as **C-031..C-050** in [A2 §2.4](docs/A2-decision-register.md#24-phase-0-answers-by-the-product-owner-2026-10-14); A3 marks each question answered. In short:
+- release **RP-A**;
+- MFA for admin + finance, **60 min idle / 12 h**, lock after 5 failures for 15 min;
+- MRN `{PREFIX}-{seq:6}`; required fields name, sex, age/DOB, mobile;
+- fixed-capacity queue with serial at check-in;
+- digits follow the UI language;
+- invoices rounded to whole taka with an adjustment line;
+- no overpayment, one payment may cover several invoices, no deposits;
+- new/follow-up doctor fees; the cashier both bills and collects;
+- method corrections on the correction day;
+- A4 + 80 mm thermal + label printers; the proposed role templates;
+- "100k users" = registered patient records;
+- GitHub Free with private repositories; SonarQube server later;
+- Supabase free plan with the Data API off; **local development only for now**.
+
+Still open in RG-0: naming owners for the integrator, QA, DevOps and domain-reviewer roles (A0 §3). Still open for the slice: Q-042 (no pilot hospital yet; synthetic profile used), Q-043 (RPO/RTO, support hours), the ½-taka rounding tie rule (Q-020) and the Q-046 device models.
+
+**Open items from these decisions:**
 
 | Item | Owner | Before |
 | --- | --- | --- |
-| Disable Supabase's Data API for the project | Product owner | Any real data |
-| Supabase plan (the free plan pauses after 7 days idle and has no PITR) | Product owner | Pilot (RG-3) |
+| Make the three GitHub repositories private (C-047) | Product owner | Now |
+| Supabase plan above free (C-049) | Product owner | Any real hospital data |
 | Test whether `BYPASSRLS` roles (`hms_relay`, `hms_control`) can be created on Supabase | Integrator | T-PLT-03 |
 | Restore drill (RB-07) against Supabase backups | DevOps | RG-1 |
-| Give HMS its own registrable domain, so it no longer shares a "site" with the ecommerce app (ADR-021) | Product owner | Production |
-| Staging deployment (T-FND-05, T-OPS-01) | Deployment owner (a team member) | — |
-| Next.js security release of 2026-10-14: upgrade from 16.4.0 before any deploy | Integrator | Any deploy |
+| Give HMS its own registrable domain (ADR-021) | Product owner | Production (deferred: local only, C-050) |
+| Staging deployment (T-FND-05, T-OPS-01) | Deployment owner (a team member) | Deferred (C-050) |
+| Next.js security release of 2026-10-14: upgrade from 16.4.0 | Integrator | Any deploy |
 
 ## 1. In one paragraph
 

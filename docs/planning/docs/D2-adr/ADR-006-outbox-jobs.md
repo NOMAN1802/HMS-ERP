@@ -1,6 +1,6 @@
 # ADR-006 — Transactional outbox and inbox, idempotency records, BullMQ delivery
 
-- **Status:** PROPOSED (P-010). Redis 8 vs Valkey is a product-owner choice (CX-015).
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-010). Valkey chosen (ADR-020, CX-015).
 - **Date:** 2026-10-12
 - **Approver:** Tech lead
 

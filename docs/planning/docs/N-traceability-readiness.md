@@ -92,12 +92,14 @@
 
 ### 4.1 Before scaffolding (RG-0)
 
-- [ ] Product owner ratifies C-022..C-025 if the requester was not the owner (A2 §2.2).
-- [ ] Approve or amend: P-001 (ADR-001), P-003 (ADR-003), P-007 (ADR-002), P-008 (ADR-004), P-009 (ADR-005), P-010 (ADR-006), P-016 (ADR-012), P-017 (ADR-013), P-021 (version pins).
-- [ ] Decide Redis 8 vs Valkey (CX-015) and the GitHub plan (Q-055).
-- [ ] Choose a staging VPS provider and the tools VPS (Q-044, Q-056). Create the GitHub organization/repository with branch protection.
+Status on 2026-10-14:
+
+- [x] Product owner ratifies C-022..C-025 (A2 §2.2, 2026-10-14).
+- [x] Approve or amend: P-001 (ADR-001), P-003 (ADR-003), P-007 (ADR-002), P-008 (ADR-004), P-009 (ADR-005), P-010 (ADR-006), P-016 (ADR-012) approved; P-017 (ADR-013) superseded by ADR-018; P-021 applied in `docs/STACK_VERSIONS.md` (A2 §3).
+- [x] Decide Redis 8 vs Valkey (CX-015 → ADR-020) and the GitHub plan (Q-055 → C-047).
+- [x] Staging provider chosen (Q-044 → ADR-020); tools VPS deferred (Q-056 → C-048). GitHub repositories created. Branch protection waits for a paid plan (C-047). Development is local for now (C-050).
 - [ ] Name owners for the roles in A0 §3: integrator, QA lead, DevOps lead, domain reviewers.
-- [ ] Choose a release option, or confirm RP-A as the planning default (Q-001).
+- [x] Choose a release option (Q-001 → C-031: RP-A).
 
 ### 4.2 Before the first workflow coding task (front desk + cashier, RG-1 passed)
 

@@ -6,7 +6,7 @@
 | Version | 0.4.0-draft |
 | Status | OPEN items; nothing here may be guessed in code |
 | Owner role | Product owner (keeps the register); each question names a responder |
-| Updated | 2026-10-12 |
+| Updated | 2026-10-14 (Phase 0 answers recorded as C-031..C-050) |
 | Supersedes | `baseline/.../docs/OPEN_QUESTIONS.md`. Q-001 to Q-006 keep their IDs. The v0.3 paragraph-style domain questions now have IDs Q-007 onward. |
 
 ## How to use this register
@@ -26,7 +26,7 @@ Priority key:
 
 | ID | Question | Why it matters | Blocks | Responder | Priority | Interim handling |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-001 | What must the first production release include? | Earlier assistant suggestions were not owner approval. The pilot's needs decide whether IPD or pharmacy are day-one. | Release gate RG-4; task ordering after Phase 1. | Product owner + pilot hospital | P1 | Build Phase 1 (foundation), which every option needs. Options are in [B §9](B-business-requirements.md#9-proposed-release-boundaries). |
+| Q-001 | What must the first production release include? | Earlier assistant suggestions were not owner approval. The pilot's needs decide whether IPD or pharmacy are day-one. | — | — | — | **Answered → C-031** (RP-A: outpatient + diagnostics first). |
 | Q-002 | Is a customer one hospital or a group? | MRN scope, permissions, billing scope. | — | — | — | **Answered → C-024** (one hospital now; groups DEFERRED as DEF-002). |
 | Q-042 | What is the pilot hospital's profile?<br>• beds and wards<br>• daily OPD, diagnostic and IPD volumes<br>• staff count by role<br>• workstations and printers<br>• peak hours<br>• overnight operations | Capacity, release choice, UAT plan, device list. | M scenario calibration; I device plan; RG-3. | Product owner + pilot | P1 | Use the labelled synthetic profiles in [M §3](M-capacity-performance.md#3-planning-scenarios). |
 | Q-052 | What are the subscription plans, limits, trial/suspension rules and continuity rules for an active admission when a subscription lapses? | Entitlement checks must not stop active care unexpectedly. | FR-SAA-007; DEF-006. | Product owner (commercial) | P4 | Entitlements are on/off flags set by the vendor operator. No automatic suspension. |
@@ -35,37 +35,37 @@ Priority key:
 
 | ID | Question | Why it matters | Blocks | Responder | Priority | Interim handling |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-003 | Which staff roles perform and which approve each action? | The complete permission matrix. | All sensitive commands. The default role templates in [C01 §5](C-srs/C01-platform-access-audit.md#5-default-role-templates-proposed) are proposals. | Hospital operations lead | P1 | Use the proposed templates for synthetic UAT only. Production role grants need sign-off. |
-| Q-039 | Who **issues** invoices (reception, billing desk, cashier) and who **collects** payment? Can one person do both? | Segregation of duties. Cashier collection is confirmed (C-009); issuing is not. | FR-BIL-007 permission mapping. | Hospital operations + finance | P1 | Separate permissions (`billing.invoice.issue`, `billing.payment.record`). Both granted to the cashier template in synthetic setups. |
-| Q-051 | Authentication policy:<br>• which roles need a second factor<br>• idle and absolute session timeouts<br>• shared workstations<br>• lockout threshold and unlock authority | Security, the nurses' "session hang / re-login" complaints (SRC-N02/N10). | FR-ACC-003..007. | Product owner + hospital IT | P1 | Configurable per tenant. Proposed defaults are in [C01](C-srs/C01-platform-access-audit.md), labelled PROPOSED. |
+| Q-003 | Which staff roles perform and which approve each action? | The complete permission matrix. | All sensitive commands. The default role templates in [C01 §5](C-srs/C01-platform-access-audit.md#5-default-role-templates-proposed) are proposals. | Hospital operations lead | P1 | **Answered for RP-A → C-045** (proposed role templates; hospitals still sign off production grants). |
+| Q-039 | Who **issues** invoices (reception, billing desk, cashier) and who **collects** payment? Can one person do both? | Segregation of duties. Cashier collection is confirmed (C-009); issuing is not. | — | — | — | **Answered → C-042** (cashier issues and collects; permissions stay separate). |
+| Q-051 | Authentication policy:<br>• which roles need a second factor<br>• idle and absolute session timeouts<br>• shared workstations<br>• lockout threshold and unlock authority | Security, the nurses' "session hang / re-login" complaints (SRC-N02/N10). | — | — | — | **Answered → C-032** (MFA admin + finance; 60 min idle / 12 h; lock after 5 for 15 min). |
 
 ## 3. Patient identity, scheduling and visits
 
 | ID | Question | Why it matters | Blocks | Responder | Priority | Interim handling |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-034 | What are the MRN format and sequence? (prefix, length, yearly reset or continuous, check digit) | Printed on every document. Hard to change later. | FR-PAT-002 format detail. | Product owner + pilot records staff | P1 | A configurable pattern per tenant; the synthetic default is `{prefix}{seq:6}`. Uniqueness is per tenant (fixed rule). |
-| Q-035 | Which demographic fields are required? Are names captured in Bangla, English or both? How are addresses structured? Is age-only registration allowed? | Registration form, duplicate search, printing. | FR-PAT-005, FR-PAT-006. | Pilot reception + product owner | P1 | Name (one script required), sex, phone (optional), age or birth date (one required unless unknown-emergency). |
+| Q-034 | What are the MRN format and sequence? (prefix, length, yearly reset or continuous, check digit) | Printed on every document. Hard to change later. | — | — | — | **Answered → C-033** (`{PREFIX}-{seq:6}`, continuous, e.g. `SMH-000123`). |
+| Q-035 | Which demographic fields are required? Are names captured in Bangla, English or both? How are addresses structured? Is age-only registration allowed? | Registration form, duplicate search, printing. | — | — | — | **Answered → C-034** (name, sex, age or DOB, mobile; address optional). |
 | Q-036 | Who may edit identity fields after registration? What is the reconciliation/merge procedure for duplicates and temporary emergency identities? | Wrong-patient risk (R-01). | FR-PAT-004, FR-PAT-008. | Hospital operations + clinical lead | P2 | Edit is permission-gated and audited. Merge is **not implemented**; linking a temporary identity is implemented only after this answer. |
-| Q-037 | What are the slot capacity rules?<br>• overbooking<br>• serial or token numbers for the doctor queue<br>• walk-ins merged into the same queue? | Doctor queue fairness, receipt printing. | FR-SCH-003, FR-SCH-004. | Pilot OPD manager | P1 | Fixed capacity per session, no overbooking, serial number by check-in order (all configurable). |
-| Q-038 | Doctor fee rules:<br>• per doctor<br>• new vs follow-up rates and the follow-up window<br>• "authorized doctor consultation reduction" (SRC-B02) — who and how much | Doctor invoice amount. | FR-BIL-010, FR-BIL-015. | Finance + medical director | P1 | Single fee per doctor price-list entry. Reductions **not implemented**. |
+| Q-037 | What are the slot capacity rules?<br>• overbooking<br>• serial or token numbers for the doctor queue<br>• walk-ins merged into the same queue? | Doctor queue fairness, receipt printing. | — | — | — | **Answered → C-035** (fixed capacity, no overbooking, serial at check-in, walk-ins in the same queue). |
+| Q-038 | Doctor fee rules:<br>• per doctor<br>• new vs follow-up rates and the follow-up window<br>• "authorized doctor consultation reduction" (SRC-B02) — who and how much | Doctor invoice amount. | — | — | — | **Answered → C-041** (new and follow-up fee per doctor, follow-up window per doctor; no reductions). |
 
 ## 4. Billing, payments and finance
 
 | ID | Question | Why it matters | Blocks | Responder | Priority | Interim handling |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-004 | Does a deposit unlock each service independently, and how is it allocated across lines? | Enforcing payment-first without a misleading total (R-02). | FR-BIL-003 deposit path; FR-BIL-012. | Cashier lead + finance | P1 | Full payment per service line only. The deposit path is disabled until answered. Line-level allocation storage exists (P-020). |
+| Q-004 | Does a deposit unlock each service independently, and how is it allocated across lines? | Enforcing payment-first without a misleading total (R-02). | FR-BIL-003 deposit path; FR-BIL-012. | Cashier lead + finance | P3 | **Answered for RP-A → C-040** (no deposits in the first release). Still open for inpatient (RP-B) with Q-040. |
 | Q-005 | What emergency payment exceptions are needed? (treat now, bill later; who authorizes; limits) | Urgent care must not be blocked by a generic payment rule. | FR-EMG-004, FR-BIL-016. | Emergency lead + finance | P2 | Emergency workflows are **not in the first slice**. Where emergency care starts before payment, staff use the paper downtime process until this is answered. |
 | Q-006 | What happens when an IPD patient is medically discharged with an unpaid balance? How do medical discharge, financial clearance and physical departure relate? | Discharge state machine; bed release; final bill. | FR-IPD-010..013. | Hospital management + finance | P3 | Separate facts are modeled. Financial clearance with dues is **not available**. Physical departure can always be recorded so the bed board stays truthful. It is flagged `DEPARTED_WITH_DUES` with an explicit acknowledgment and no policy implied (FR-IPD-013). |
 | Q-019 | Discounts:<br>• who may give them, and limits per role<br>• item-wise vs bill-level ("head") discount<br>• reasons list<br>• whether discount without patient selection (SRC-O03) is allowed | Revenue leakage, audit. | FR-BIL-013, FR-BIL-014. | Finance + management | P2 | Discounts **not implemented** in slice 1. |
-| Q-020 | Rounding:<br>• rounding to whole taka on invoices or receipts<br>• explicit fraction-adjustment line (SRC-B05)<br>• rounding of percentage discounts | Totals must match detail. | FR-BIL-017. | Finance | P1 | No rounding: amounts kept to 2 decimals (poisha). Price lists entered in whole taka in synthetic data. |
+| Q-020 | Rounding:<br>• rounding to whole taka on invoices or receipts<br>• explicit fraction-adjustment line (SRC-B05)<br>• rounding of percentage discounts | Totals must match detail. | FR-BIL-017. | Finance | P1 | **Main part answered → C-037** (nearest whole taka with a rounding adjustment line). Still open: the exact ½-taka tie rule and percentage-discount rounding. |
 | Q-021 | Refunds:<br>• approval levels<br>• refund method (same as original or any method)<br>• cash refund limits<br>• refund after service started | Money out of the hospital. | FR-BIL-018. | Finance | P2 | Refunds **not implemented** in slice 1. Cancellation before payment only. |
-| Q-022 | Overpayment and patient advance: does excess money become patient credit (a deposit account) or must it be refunded immediately? | Balance correctness. | FR-BIL-019. | Finance | P1 | Payment amount cannot exceed the selected open balance (rejected with `AMOUNT_EXCEEDS_BALANCE`). |
+| Q-022 | Overpayment and patient advance: does excess money become patient credit (a deposit account) or must it be refunded immediately? | Balance correctness. | — | — | — | **Answered → C-038** (no overpayment; change given). |
 | Q-023 | Invoice correction and "test restoration to the same invoice" (SRC-O03): when may a cancelled line be restored, and does it reuse the original invoice? | Invoice immutability vs operational convenience. | FR-BIL-020. | Finance + lab manager | P2 | Not implemented. A cancelled line stays cancelled; a new order creates a new line. |
-| Q-024 | Can one payment be split across the doctor invoice and the service invoice in a single receipt? | Cashier speed vs receipt clarity. | FR-BIL-012. | Cashier lead + finance | P1 | One payment allocates to one invoice. The cashier records two payments for two invoices. |
+| Q-024 | Can one payment be split across the doctor invoice and the service invoice in a single receipt? | Cashier speed vs receipt clarity. | — | — | — | **Answered → C-039** (one payment, several invoices, one receipt). |
 | Q-040 | Does an IPD/OPD deposit carry across visits as a patient-level deposit account? | Account model. | FR-BIL-019, FR-IPD-008. | Finance | P3 | A deposit belongs to one admission or one visit invoice. |
 | Q-029 | Finance scope:<br>• full general ledger in-product, or export to an external accounting system<br>• chart of accounts, period close<br>• "daily finalization" meaning (SRC-B07)<br>• bank reconciliation scope | The finance module cannot be specified without this. | All FR-FIN-* except the cashier day close. | Finance director | P4 | Only the cashier session/day-close and collection reports are specified ([C04](C-srs/C04-billing-payments.md)). |
 | Q-045 | Payment gateway (e.g., bKash, card acquirer) integration in the first release, or manual recording of the method only? | Callback, pending-state and reconciliation design. | FR-BIL-021..023 (gateway path). | Product owner + finance | P1 | Manual recording only (C-010 methods are recorded; no online settlement). |
-| Q-068 | When a payment method is corrected after the original cashier session has closed, which session or day shows the change: the original session, or the day of correction? | Collection reports must reconcile with physical cash and bank statements. | FR-BIL-025 reporting. | Finance | P1 | The original session totals stay as closed. The correction appears in a "method corrections" section of the correction day's report. **PROPOSED; confirm.** |
+| Q-068 | When a payment method is corrected after the original cashier session has closed, which session or day shows the change: the original session, or the day of correction? | Collection reports must reconcile with physical cash and bank statements. | — | — | — | **Answered → C-043** (correction appears on the correction day; closed reports never change). |
 
 ## 5. Clinical, diagnostics and inpatient
 
@@ -111,18 +111,18 @@ Priority key:
 
 | ID | Question | Why it matters | Blocks | Responder | Priority | Interim handling |
 | --- | --- | --- | --- | --- | --- | --- |
-| Q-041 | Does "100,000 users" mean registered accounts, daily active users or concurrent users? Staff only, or including portal patients? | Capacity planning (C-028). | Capacity tier choice in [M](M-capacity-performance.md). | Product owner | T | Three scenarios modeled; no guarantee. |
+| Q-041 | Does "100,000 users" mean registered accounts, daily active users or concurrent users? Staff only, or including portal patients? | Capacity planning (C-028). | — | — | — | **Answered → C-046** (total registered patient records over time). |
 | Q-043 | Recovery and support objectives:<br>• acceptable data loss (RPO)<br>• restore time (RTO)<br>• support hours (24×7?)<br>• planned maintenance windows | Backup frequency, topology, on-call. | NFR-REC-001, NFR-AVAIL-001; RG-4. | Product owner + pilot | T | Proposed engineering targets are in [J §8](J-vps-deployment-operations.md#8-backups-and-tested-restoration), labelled PROPOSED. |
 | Q-044 | VPS provider and region; provider object storage availability. Legal hosting constraints are DEFERRED (DEF-001). | Latency to Bangladesh hospitals; backups off-site. | J provider-specific runbooks. | Product owner + DevOps | T | Provider-neutral design. |
-| Q-046 | Printers and devices:<br>• A4/A5 models<br>• label printer model and label size<br>• barcode symbology<br>• barcode scanners<br>• receipt printers? | Print templates and UAT. | FR-PRN-*, UAT device tests. | Pilot IT | P1 | A4 and A5 browser print; Code 128 labels at a configurable size (PROPOSED). |
+| Q-046 | Printers and devices:<br>• A4/A5 models<br>• label printer model and label size<br>• barcode symbology<br>• barcode scanners<br>• receipt printers? | Print templates and UAT. | FR-PRN-*, UAT device tests. | Pilot IT | P1 | **Device classes answered → C-044** (A4 laser, 80 mm thermal, barcode label printer). Models, label size and barcode symbology confirmed in device UAT. |
 | Q-047 | Analyzer interfaces (EXL-200 and others): protocol, connection, sample ID matching; manual entry acceptable for the first release? | LIS integration. | FR-INT-002..005. | Lab manager + device vendor | P2 | Manual result entry. |
 | Q-048 | Legacy data migration scope: patients, open balances, open admissions, stock batches, historical reports? | Cutover plan. | Migration tasks; RG-3. | Product owner + pilot | T | Fresh start with synthetic data; migration tooling designed but not built. |
 | Q-049 | SMS / notification provider; patient notifications in scope? | Integration. | FR-INT-008. | Product owner | P4 | Not implemented. |
-| Q-050 | Bilingual details:<br>• Bangla digits (০–৯) or Western digits on screen and print<br>• date format<br>• which print documents are bilingual vs single-language<br>• default language per user/tenant<br>• native-speaker terminology review | C-025 implementation. | FR-I18N-003..006. | Product owner + native-speaker reviewer | P1 | Western digits, `dd-MM-yyyy`, language chosen per user, print language chosen per template (PROPOSED). |
+| Q-050 | Bilingual details:<br>• Bangla digits (০–৯) or Western digits on screen and print<br>• date format<br>• which print documents are bilingual vs single-language<br>• default language per user/tenant<br>• native-speaker terminology review | C-025 implementation. | FR-I18N-003..006. | Product owner + native-speaker reviewer | P1 | **Answered → C-036** (digits follow UI language; `dd-MM-yyyy`; print language per template). Native-speaker review still needed. |
 | Q-053 | Operational retention durations for audit logs, backups and deleted-user data (non-statutory). Statutory retention is DEFERRED. | Storage growth, privacy. | NFR-RET-001. | Product owner | T | Keep everything; no automatic purge. |
-| Q-054 | Test runner: keep Jest (supplied foundation) or switch to Vitest (NestJS 12's ESM default)? | Tooling consistency. | Scaffold task T-FND-01. | Tech lead | T | Jest on Node ≥ 24.9 per P-017; spike first. |
-| Q-055 | Which GitHub plan (Free / Team / Enterprise)? Organization or personal account? | Environment protection rules (required reviewers need Enterprise for private repos), secret scanning, gitleaks licence. | L production approval design. | Product owner | T | Design works on Team: manual approval through a protected "release" workflow restricted to maintainers. |
-| Q-056 | Where is the SonarQube server hosted and who administers it? | Community Build needs ≥ 4 GB RAM and should not share the production VPS. | L Sonar setup. | DevOps lead | T | A separate small "tools" VPS (PROPOSED). |
+| Q-054 | Test runner: keep Jest (supplied foundation) or switch to Vitest (NestJS 12's ESM default)? | Tooling consistency. | — | — | — | **Answered → ADR-018** (Vitest). |
+| Q-055 | Which GitHub plan (Free / Team / Enterprise)? Organization or personal account? | Environment protection rules (required reviewers need Enterprise for private repos), secret scanning, gitleaks licence. | — | — | — | **Answered → C-047** (GitHub Free; repositories private; deploy keys). |
+| Q-056 | Where is the SonarQube server hosted and who administers it? | Community Build needs ≥ 4 GB RAM and should not share the production VPS. | — | — | — | **Answered → C-048** (SonarQube server deferred; ESLint + SonarJS meanwhile). |
 
 **Numbering note:** Q-057, Q-059 and Q-062 are intentionally unused, and the numbers are not reused, to keep IDs stable. While drafting:
 - Q-057 (real-time worklist updates) became an engineering proposal (ADR-015).
@@ -137,6 +137,25 @@ Priority key:
 | (v0.3 tech) CI/CD provider | GitHub Actions | C-022 |
 | (v0.3 tech) SonarQube edition | Self-hosted Community Build | C-023 |
 | (v0.3 tech) Languages | Bangla + English, user-switchable, bilingual prints | C-025 |
+| Q-001 | RP-A: outpatient + diagnostics first. | C-031 |
+| Q-003 (for RP-A) | Proposed role templates as the starting set. | C-045 |
+| Q-004 (for RP-A) | No deposits in the first release. | C-040 |
+| Q-020 (main part) | Nearest whole taka with a rounding adjustment line. | C-037 |
+| Q-022 | No overpayment; change given. | C-038 |
+| Q-024 | One payment may cover several invoices; one receipt. | C-039 |
+| Q-034 | `{PREFIX}-{seq:6}`, continuous. | C-033 |
+| Q-035 | Name, sex, age or DOB, mobile required. | C-034 |
+| Q-037 | Fixed capacity, serial at check-in. | C-035 |
+| Q-038 | New and follow-up fee per doctor. | C-041 |
+| Q-039 | Cashier issues and collects. | C-042 |
+| Q-041 | Registered patient records over time. | C-046 |
+| Q-046 (device classes) | A4 laser, 80 mm thermal, barcode label printer. | C-044 |
+| Q-050 | Digits follow UI language; `dd-MM-yyyy`. | C-036 |
+| Q-051 | MFA admin + finance; 60 min idle / 12 h; lock 5 × 15 min. | C-032 |
+| Q-054 | Vitest. | ADR-018 |
+| Q-055 | GitHub Free; private repositories. | C-047 |
+| Q-056 | SonarQube server deferred. | C-048 |
+| Q-068 | Corrections on the correction day. | C-043 |
 
 ## 9. Recording an answer
 

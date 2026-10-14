@@ -1,6 +1,6 @@
 # ADR-005 — Zod-first canonical contracts and generated OpenAPI
 
-- **Status:** PROPOSED (P-009)
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-009).
 - **Date:** 2026-10-12
 - **Approver:** Tech lead
 

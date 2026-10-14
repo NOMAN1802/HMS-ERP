@@ -1,6 +1,6 @@
 # ADR-003 — Shared-schema tenancy with composite tenant keys and RLS
 
-- **Status:** PROPOSED (P-002 partly settled by C-024; P-003)
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-002 partly settled by C-024; P-003). Evidence items 1–4 recorded below.
 - **Date:** 2026-10-12
 - **Approver:** Tech lead + product owner
 

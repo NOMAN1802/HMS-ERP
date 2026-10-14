@@ -1,6 +1,6 @@
 # ADR-001 — Modular monolith with a separate worker process
 
-- **Status:** PROPOSED (P-001, P-004)
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-001, P-004).
 - **Date:** 2026-10-12
 - **Approver:** Tech lead
 

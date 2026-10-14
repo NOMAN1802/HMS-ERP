@@ -1,6 +1,6 @@
 # ADR-004 — First-party session authentication in NestJS
 
-- **Status:** PROPOSED (P-008). MFA scope and timeouts are OPEN (Q-051).
+- **Status:** ACCEPTED by the product owner on 2026-10-14 (P-008). MFA scope and timeouts: C-032 (Q-051). Cookie scope amended by ADR-021.
 - **Date:** 2026-10-12
 - **Approver:** Product owner (policy) + tech lead
 

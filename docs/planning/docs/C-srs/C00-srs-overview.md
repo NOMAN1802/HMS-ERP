@@ -109,24 +109,24 @@ Configurable policies are **tenant configuration with effective dates and versio
 | CP-04 | Emergency payment exceptions | Per facility | Disabled | OPEN | Q-005 |
 | CP-05 | Price lists (services, tests, doctor fees) | Per tenant, effective-dated | Must be configured before go-live | CONFIRMED capability | Q-038 |
 | CP-06 | Discount reasons, limits, approvers | Per role | Discounts disabled | OPEN | Q-019 |
-| CP-07 | Rounding rule for invoices/receipts | Per tenant | None (exact 2-decimal) | OPEN | Q-020 |
+| CP-07 | Rounding rule for invoices/receipts | Per tenant | Nearest whole taka on the invoice total, with a rounding adjustment line; lines exact to 2 decimals | CONFIRMED (C-037); ½-taka tie rule OPEN | Q-020 |
 | CP-08 | Refund approval levels and methods | Per tenant | Refunds disabled | OPEN | Q-021 |
-| CP-09 | MRN / invoice / receipt / specimen numbering patterns | Per document type | `{PREFIX}-{YYYY}-{seq:6}` (synthetic) | CONFIRMED capability; format OPEN | Q-034 |
-| CP-10 | Required registration fields (above product minimum) | Per tenant | Product minimum only (FR-PAT-005) | OPEN | Q-035 |
-| CP-11 | Slot capacity, overbooking, queue numbering | Per schedule | Fixed capacity, no overbooking, sequence at check-in | OPEN | Q-037 |
-| CP-12 | Session timeouts, lockout threshold, MFA roles | Per tenant | Idle 30 min, absolute 12 h, lockout after 5 failures for 15 min, MFA for admin/finance roles (all PROPOSED) | OPEN | Q-051 |
+| CP-09 | MRN / invoice / receipt / specimen numbering patterns | Per document type | MRN `{PREFIX}-{seq:6}`, continuous (e.g. `SMH-000123`); other documents synthetic | MRN CONFIRMED (C-033); other formats OPEN | Q-034 |
+| CP-10 | Required registration fields (above product minimum) | Per tenant | Name (Bangla or English), sex, age or DOB, mobile (empty only if none); address optional | CONFIRMED (C-034) | Q-035 |
+| CP-11 | Slot capacity, overbooking, queue numbering | Per schedule | Fixed capacity, no overbooking, serial at check-in, walk-ins in the same queue | CONFIRMED (C-035) | Q-037 |
+| CP-12 | Session timeouts, lockout threshold, MFA roles | Per tenant | Idle 60 min, absolute 12 h, lockout after 5 failures for 15 min (admin may unlock sooner), MFA for admin/finance roles | CONFIRMED (C-032) | Q-051 |
 | CP-13 | Lab verify/release separation (same person allowed?) | Per test category | Same person **not** allowed | OPEN | Q-009 |
 | CP-14 | Lab reference ranges, methods, templates, units | Per test version | Entered by lab; no product defaults | CONFIRMED capability (FR-LAB-003) | Q-011 |
 | CP-15 | Bed cleaning required after transfer vacancy | Per tenant | Required | OPEN | Q-008 |
 | CP-16 | Bed-rent rule | Per tenant | No automatic charge; manual posting | OPEN | Q-007 |
 | CP-17 | Report delivery allowed with outstanding dues | Per report type | Allowed, dues shown | OPEN | Q-013 |
-| CP-18 | UI default language; print language per template; digits; date format | Per tenant / user / template | User choice; Western digits; `dd-MM-yyyy` | CONFIRMED capability (C-025); values OPEN | Q-050 |
-| CP-19 | Print templates (A4/A5/label sizes, header, logo) | Per document type | Product templates | CONFIRMED capability (SRC-Q01) | Q-046 |
+| CP-18 | UI default language; print language per template; digits; date format | Per tenant / user / template | User choice; digits follow the UI language (Bangla UI → Bangla digits); `dd-MM-yyyy`; print language per template | CONFIRMED (C-025, C-036) | Q-050 |
+| CP-19 | Print templates (A4/A5/label sizes, header, logo) | Per document type | Product templates for A4 and 80 mm thermal; barcode labels for specimens | CONFIRMED capability (SRC-Q01); device classes C-044 | Q-046 |
 | CP-20 | Pharmacy OPD payment gate / IPD posting | Per tenant | OPD pay-before-issue; IPD to running account (disabled until confirmed) | OPEN | Q-015 |
 | CP-21 | Medicine return acceptance before credit | Per tenant | Credit after acceptance | OPEN | Q-018 |
 | CP-22 | Order cancellation allowed stages and approvers | Per service category | Before payment and before work only | OPEN | Q-017 |
 | CP-23 | Emergency priority category list | Per facility | Tenant-defined list, no product defaults | OPEN | Q-025 |
-| CP-24 | Segregation-of-duty pairs (e.g., issuer ≠ collector) | Per tenant | None enforced except CP-13 | OPEN | Q-039 |
+| CP-24 | Segregation-of-duty pairs (e.g., issuer ≠ collector) | Per tenant | None enforced; cashier may both issue and collect | CONFIRMED (C-042) | Q-039 |
 
 ## 7. Standard paths applied to every state-changing command
 
