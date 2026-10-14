@@ -186,6 +186,65 @@ describe('AuthService', () => {
     expect(stored).toEqual([]);
   });
 
+  describe('session replacement and revocation are permanent', () => {
+    const activeSessions = (userId: string) =>
+      prisma.userSession.count({ where: { userId, revokedAt: null } });
+
+    it('creates only one session when two hospital switches run at once', async () => {
+      const user = await userWithHospitals(2);
+      const { token } = await login(user.username);
+      const ctx = (await service.resolveSession(token))!;
+      const results = await Promise.allSettled([
+        service.selectMembership(ctx, user.memberships[0]!, meta),
+        service.selectMembership(ctx, user.memberships[1]!, meta),
+      ]);
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      expect(await activeSessions(user.id)).toBe(1);
+    });
+
+    it('does not create a session when a switch finishes after logout', async () => {
+      const user = await userWithHospitals(2);
+      const { token } = await login(user.username);
+      const ctx = (await service.resolveSession(token))!;
+      await service.logout(ctx, meta);
+      await expectCode(
+        service.selectMembership(ctx, user.memberships[0]!, meta),
+        'UNAUTHENTICATED',
+      );
+      expect(await activeSessions(user.id)).toBe(0);
+    });
+
+    it('keeps the old cookie dead after a disabled account is restored', async () => {
+      const user = await userWithHospitals(1);
+      const { token } = await login(user.username);
+      await prisma.userAccount.update({ where: { id: user.id }, data: { status: 'DISABLED' } });
+      expect(await service.resolveSession(token)).toBeNull();
+      await prisma.userAccount.update({ where: { id: user.id }, data: { status: 'ACTIVE' } });
+      expect(await service.resolveSession(token)).toBeNull();
+    });
+
+    it('revokes sessions when access is removed, even if nobody calls in between', async () => {
+      const user = await userWithHospitals(1);
+      const { token } = await login(user.username);
+      await prisma.userAccount.update({ where: { id: user.id }, data: { status: 'DISABLED' } });
+      await prisma.userAccount.update({ where: { id: user.id }, data: { status: 'ACTIVE' } });
+      expect(await service.resolveSession(token)).toBeNull();
+    });
+
+    it('keeps the old cookie dead after a suspended membership is restored', async () => {
+      const user = await userWithHospitals(1);
+      const { token } = await login(user.username);
+      const tenantId = (await service.resolveSession(token))?.tenantId ?? '';
+      const setStatus = (status: 'SUSPENDED' | 'ACTIVE') =>
+        withTenant(prisma, { tenantId }, (tx) =>
+          tx.membership.update({ where: { id: user.memberships[0] ?? '' }, data: { status } }),
+        );
+      await setStatus('SUSPENDED');
+      await setStatus('ACTIVE');
+      expect(await service.resolveSession(token)).toBeNull();
+    });
+  });
+
   it('logout revokes the session', async () => {
     const user = await userWithHospitals(1);
     const { token } = await login(user.username);
