@@ -22,13 +22,13 @@ The product owner made these decisions while the repository was scaffolded. They
 - tenant isolation with RLS + `withTenant()` passed ADR-003 evidence items 1–4 on local PostgreSQL 17 and on Supabase's transaction pooler (T-FND-04);
 - the RLS coverage check (T-DB-02) runs in CI.
 
-**Phase 0 answers (2026-10-14):** the product owner answered the first-slice questions, approved ADR-001..006 and ADR-012, and ratified C-022..C-025. They are recorded as **C-031..C-050** in [A2 §2.4](docs/A2-decision-register.md#24-phase-0-answers-by-the-product-owner-2026-10-14); A3 marks each question answered. In short:
+**Phase 0 answers (2026-10-14):** the product owner answered the first-slice questions, approved ADR-001..006 and ADR-012, and ratified C-022..C-025. They are recorded as **C-031..C-051** in [A2 §2.4](docs/A2-decision-register.md#24-phase-0-answers-by-the-product-owner-2026-10-14); A3 marks each question answered. In short:
 - release **RP-A**;
 - MFA for admin + finance, **60 min idle / 12 h**, lock after 5 failures for 15 min;
 - MRN `{PREFIX}-{seq:6}`; required fields name, sex, age/DOB, mobile;
 - fixed-capacity queue with serial at check-in;
 - digits follow the UI language;
-- invoices rounded to whole taka with an adjustment line;
+- invoices rounded to whole taka (half rounds up, C-051) with an adjustment line;
 - no overpayment, one payment may cover several invoices, no deposits;
 - new/follow-up doctor fees; the cashier both bills and collects;
 - method corrections on the correction day;
@@ -37,7 +37,7 @@ The product owner made these decisions while the repository was scaffolded. They
 - GitHub Free with private repositories; SonarQube server later;
 - Supabase free plan with the Data API off; **local development only for now**.
 
-Still open in RG-0: naming owners for the integrator, QA, DevOps and domain-reviewer roles (A0 §3). Still open for the slice: Q-042 (no pilot hospital yet; synthetic profile used), Q-043 (RPO/RTO, support hours), the ½-taka rounding tie rule (Q-020) and the Q-046 device models.
+Still open in RG-0: naming owners for the integrator, QA, DevOps and domain-reviewer roles (A0 §3). Still open for the slice: Q-042 (no pilot hospital yet; synthetic profile used), Q-043 (RPO/RTO, support hours) and the Q-046 device models.
 
 **Open items from these decisions:**
 

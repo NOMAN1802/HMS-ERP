@@ -57,7 +57,7 @@ Priority key:
 | Q-005 | What emergency payment exceptions are needed? (treat now, bill later; who authorizes; limits) | Urgent care must not be blocked by a generic payment rule. | FR-EMG-004, FR-BIL-016. | Emergency lead + finance | P2 | Emergency workflows are **not in the first slice**. Where emergency care starts before payment, staff use the paper downtime process until this is answered. |
 | Q-006 | What happens when an IPD patient is medically discharged with an unpaid balance? How do medical discharge, financial clearance and physical departure relate? | Discharge state machine; bed release; final bill. | FR-IPD-010..013. | Hospital management + finance | P3 | Separate facts are modeled. Financial clearance with dues is **not available**. Physical departure can always be recorded so the bed board stays truthful. It is flagged `DEPARTED_WITH_DUES` with an explicit acknowledgment and no policy implied (FR-IPD-013). |
 | Q-019 | Discounts:<br>• who may give them, and limits per role<br>• item-wise vs bill-level ("head") discount<br>• reasons list<br>• whether discount without patient selection (SRC-O03) is allowed | Revenue leakage, audit. | FR-BIL-013, FR-BIL-014. | Finance + management | P2 | Discounts **not implemented** in slice 1. |
-| Q-020 | Rounding:<br>• rounding to whole taka on invoices or receipts<br>• explicit fraction-adjustment line (SRC-B05)<br>• rounding of percentage discounts | Totals must match detail. | FR-BIL-017. | Finance | P1 | **Main part answered → C-037** (nearest whole taka with a rounding adjustment line). Still open: the exact ½-taka tie rule and percentage-discount rounding. |
+| Q-020 | Rounding:<br>• rounding to whole taka on invoices or receipts<br>• explicit fraction-adjustment line (SRC-B05)<br>• rounding of percentage discounts | Totals must match detail. | FR-BIL-017. | Finance | P1 | **Answered for invoices → C-037, C-051** (nearest whole taka, half rounds up, shown as a rounding adjustment line). Still open: percentage-discount rounding (discounts are not in RP-A). |
 | Q-021 | Refunds:<br>• approval levels<br>• refund method (same as original or any method)<br>• cash refund limits<br>• refund after service started | Money out of the hospital. | FR-BIL-018. | Finance | P2 | Refunds **not implemented** in slice 1. Cancellation before payment only. |
 | Q-022 | Overpayment and patient advance: does excess money become patient credit (a deposit account) or must it be refunded immediately? | Balance correctness. | — | — | — | **Answered → C-038** (no overpayment; change given). |
 | Q-023 | Invoice correction and "test restoration to the same invoice" (SRC-O03): when may a cancelled line be restored, and does it reuse the original invoice? | Invoice immutability vs operational convenience. | FR-BIL-020. | Finance + lab manager | P2 | Not implemented. A cancelled line stays cancelled; a new order creates a new line. |
@@ -140,7 +140,7 @@ Priority key:
 | Q-001 | RP-A: outpatient + diagnostics first. | C-031 |
 | Q-003 (for RP-A) | Proposed role templates as the starting set. | C-045 |
 | Q-004 (for RP-A) | No deposits in the first release. | C-040 |
-| Q-020 (main part) | Nearest whole taka with a rounding adjustment line. | C-037 |
+| Q-020 (invoices) | Nearest whole taka, half rounds up, with a rounding adjustment line. | C-037, C-051 |
 | Q-022 | No overpayment; change given. | C-038 |
 | Q-024 | One payment may cover several invoices; one receipt. | C-039 |
 | Q-034 | `{PREFIX}-{seq:6}`, continuous. | C-033 |

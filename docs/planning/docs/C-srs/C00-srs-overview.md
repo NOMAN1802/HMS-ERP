@@ -109,7 +109,7 @@ Configurable policies are **tenant configuration with effective dates and versio
 | CP-04 | Emergency payment exceptions | Per facility | Disabled | OPEN | Q-005 |
 | CP-05 | Price lists (services, tests, doctor fees) | Per tenant, effective-dated | Must be configured before go-live | CONFIRMED capability | Q-038 |
 | CP-06 | Discount reasons, limits, approvers | Per role | Discounts disabled | OPEN | Q-019 |
-| CP-07 | Rounding rule for invoices/receipts | Per tenant | Nearest whole taka on the invoice total, with a rounding adjustment line; lines exact to 2 decimals | CONFIRMED (C-037); ½-taka tie rule OPEN | Q-020 |
+| CP-07 | Rounding rule for invoices/receipts | Per tenant | Nearest whole taka on the invoice total, with a rounding adjustment line; lines exact to 2 decimals | CONFIRMED (C-037, C-051: half rounds up) | Q-020 |
 | CP-08 | Refund approval levels and methods | Per tenant | Refunds disabled | OPEN | Q-021 |
 | CP-09 | MRN / invoice / receipt / specimen numbering patterns | Per document type | MRN `{PREFIX}-{seq:6}`, continuous (e.g. `SMH-000123`); other documents synthetic | MRN CONFIRMED (C-033); other formats OPEN | Q-034 |
 | CP-10 | Required registration fields (above product minimum) | Per tenant | Name (Bangla or English), sex, age or DOB, mobile (empty only if none); address optional | CONFIRMED (C-034) | Q-035 |

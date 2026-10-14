@@ -108,6 +108,7 @@ Answered by the product owner (Bytespate) on 2026-10-14 for the first release. "
 | C-048 | The SonarQube server is **deferred**. Until then, ESLint with SonarJS rules in CI is the quality gate. | C-023 stands; only the server set-up date moves. | Q-056 |
 | C-049 | Supabase **free plan** for development and testing; the Data API is **disabled** (done 2026-10-14). The plan is revisited before any real hospital data. | Free projects pause after 7 days idle (ADR-019). | ADR-019 open items |
 | C-050 | **Development is local for now.** Staging deployment is owned by a team member; domains and hosting are not needed for current work. | ADR-020/021 remain the deployment design. | — |
+| C-051 | Rounding tie rule: an invoice total at exactly half a taka **rounds up** (৳452.50 → ৳453; ৳452.49 → ৳452). | Completes C-037 for invoice totals. Rounding of percentage discounts stays open (discounts are not in RP-A). | Q-020 (tie rule) |
 
 ## 3. Proposed engineering decisions
 
