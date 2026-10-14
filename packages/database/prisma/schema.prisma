@@ -32,7 +32,9 @@ model Tenant {
   createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
   version   Int          @default(1)
 
-  facilities Facility[]
+  facilities  Facility[]
+  memberships Membership[]
+  auditEvents AuditEvent[]
 
   @@map("tenant")
   @@schema("hms")
@@ -73,5 +75,141 @@ model Department {
   @@unique([tenantId, id])
   @@unique([tenantId, facilityId, code])
   @@map("department")
+  @@schema("hms")
+}
+
+enum UserStatus {
+  ACTIVE
+  LOCKED_TEMPORARY
+  LOCKED_ADMIN
+  DISABLED
+
+  @@schema("hms")
+}
+
+enum PreferredLang {
+  bn_BD @map("bn-BD")
+  en
+
+  @@schema("hms")
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REVOKED
+
+  @@schema("hms")
+}
+
+enum EventOutcome {
+  SUCCEEDED
+  DENIED
+  FAILED
+
+  @@schema("hms")
+}
+
+// Global login identity: one person may belong to several hospitals (E section 6, ADR-004).
+// Not tenant-scoped, so no RLS. Usernames are stored lower-case (CHECK in the migration).
+model UserAccount {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  username       String        @unique
+  displayName    String        @map("display_name")
+  passwordHash   String        @map("password_hash")
+  status         UserStatus    @default(ACTIVE)
+  failedAttempts Int           @default(0) @map("failed_attempts")
+  lockedUntil    DateTime?     @map("locked_until") @db.Timestamptz
+  lockReason     String?       @map("lock_reason")
+  preferredLang  PreferredLang @default(bn_BD) @map("preferred_lang")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  version        Int           @default(1)
+
+  memberships Membership[]
+  sessions    UserSession[]
+
+  @@map("user_account")
+  @@schema("hms")
+}
+
+// A user's access to one hospital. Roles and facility scope arrive with T-ACC-02.
+model Membership {
+  tenantId  String           @map("tenant_id") @db.Uuid
+  id        String           @id @default(uuid(7)) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  version   Int              @default(1)
+
+  tenant   Tenant        @relation(fields: [tenantId], references: [id])
+  user     UserAccount   @relation(fields: [userId], references: [id])
+  sessions UserSession[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, userId])
+  @@map("membership")
+  @@schema("hms")
+}
+
+// Server-side session, found by SHA-256 of the cookie token (the raw token is never stored).
+// tenant_id/membership_id are null until the user chooses a hospital.
+model UserSession {
+  tokenHash         Bytes     @id @map("token_hash")
+  userId            String    @map("user_id") @db.Uuid
+  tenantId          String?   @map("tenant_id") @db.Uuid
+  membershipId      String?   @map("membership_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastSeenAt        DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz
+  idleExpiresAt     DateTime  @map("idle_expires_at") @db.Timestamptz
+  absoluteExpiresAt DateTime  @map("absolute_expires_at") @db.Timestamptz
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz
+
+  user       UserAccount @relation(fields: [userId], references: [id])
+  membership Membership? @relation(fields: [tenantId, membershipId], references: [tenantId, id])
+
+  @@index([userId])
+  @@map("user_session")
+  @@schema("hms")
+}
+
+// Authentication events that happen before a hospital is known (decision 1 of the T-ACC-01 plan).
+// Append-only: the app may insert and read, never update or delete.
+model AuthEvent {
+  id                String       @id @default(uuid(7)) @db.Uuid
+  occurredAt        DateTime     @default(now()) @map("occurred_at") @db.Timestamptz
+  action            String
+  outcome           EventOutcome
+  userId            String?      @map("user_id") @db.Uuid
+  usernameAttempted String?      @map("username_attempted")
+  reason            String?
+  ipAddress         String?      @map("ip_address")
+  correlationId     String?      @map("correlation_id")
+
+  @@index([userId, occurredAt])
+  @@map("auth_event")
+  @@schema("hms")
+}
+
+// Tenant audit trail (FR-AUD-001). Append-only; details hold IDs and codes, never clinical text.
+model AuditEvent {
+  tenantId      String       @map("tenant_id") @db.Uuid
+  id            String       @id @default(uuid(7)) @db.Uuid
+  occurredAt    DateTime     @default(now()) @map("occurred_at") @db.Timestamptz
+  actorUserId   String?      @map("actor_user_id") @db.Uuid
+  membershipId  String?      @map("membership_id") @db.Uuid
+  action        String
+  targetType    String?      @map("target_type")
+  targetId      String?      @map("target_id") @db.Uuid
+  outcome       EventOutcome
+  reason        String?
+  correlationId String?      @map("correlation_id")
+  details       Json?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, actorUserId, occurredAt])
+  @@index([tenantId, targetType, targetId, occurredAt])
+  @@map("audit_event")
   @@schema("hms")
 }
