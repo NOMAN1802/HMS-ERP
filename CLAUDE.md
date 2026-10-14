@@ -2,6 +2,15 @@
 
 Hospital ERP sold as SaaS. Read [README.md](README.md) for layout and commands, and [docs/planning/README.md](docs/planning/README.md) for requirements and design. Coding agents follow [G §5](docs/planning/docs/G-implementation-plan.md#5-context-packet-for-each-agent-task).
 
+## Git workflow
+
+Full guide: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md). In short:
+
+- **`main`** = deployable only (release PRs from `dev`, hotfixes). **`dev`** = integration branch. Never commit directly to either.
+- Work branch per task from `dev`: `<type>/<task-id>-<slug>`, e.g. `feat/T-ACC-01-login`. Types: `feat fix refactor test docs chore hotfix`.
+- Commits: Conventional Commits `type(scope): subject`, imperative, at most 72 characters, footer `Refs: T-XXX-NN`.
+- PR into `dev`, CI green, human review, **squash merge**, delete the branch on all remotes. Releases: PR `dev` -> `main`, merge commit, tag `vX.Y.Z`.
+
 ## Git: always push to all three remotes
 
 | Remote   | URL                                       | Role     |
@@ -10,13 +19,13 @@ Hospital ERP sold as SaaS. Read [README.md](README.md) for layout and commands, 
 | `reza`   | https://github.com/rezaulrht/HMS-ERP.git  | Backup 1 |
 | `noman`  | https://github.com/NOMAN1802/HMS-ERP.git  | Backup 2 |
 
-After every commit that is pushed, push the same branch to **all three**:
+Push **every branch and tag** to **all three** (work branches too):
 
 ```bash
 git push origin <branch> && git push reza <branch> && git push noman <branch>
 ```
 
-- Never force-push. If a remote rejects a push, fetch and investigate instead.
+- Never force-push `main` or `dev`. If a remote rejects a push, fetch and investigate instead.
 - **No AI attribution in commits or PRs.** Never add a `Co-Authored-By: Claude` trailer, a "Generated with Claude Code" line or a session link. `.claude/settings.json` sets `attribution` to empty for everyone; do not override it.
 - Commit messages follow the same character rule as code (below): plain ASCII punctuation only.
 - If the remotes are missing (fresh clone), add them:

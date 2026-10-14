@@ -1,13 +1,13 @@
-# Pull-request and main-branch checks (docs/planning/docs/L-cicd-sonarqube.md §3).
+# Checks for pull requests and pushes to dev and main (docs/GIT_WORKFLOW.md, L §3).
 # Third-party actions are pinned to full commit SHAs; the comment shows the release.
 # Image scanning, secret scanning and the SonarQube job are added with T-FND-03 / T-FND-05.
 name: ci
 
 on:
   pull_request:
-    branches: [main]
+    branches: [dev, main]
   push:
-    branches: [main]
+    branches: [dev, main]
 
 permissions:
   contents: read
