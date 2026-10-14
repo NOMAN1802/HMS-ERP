@@ -2,7 +2,7 @@
 
 - **Status:** ACCEPTED by the product owner on 2026-10-14.
 - **Date:** 2026-10-14
-- **Amends:** D §4 and J §6 (single domain with `/api/*` routed by the proxy), ADR-004 (cookie scope), ADR-002 (server-side prefetch with the user's cookie)
+- **Amends:** D §4 and J §5 (single domain with `/api/*` routed by the proxy), ADR-004 (cookie scope), ADR-002 (server-side prefetch with the user's cookie)
 
 ## Context
 

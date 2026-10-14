@@ -6,8 +6,9 @@
 | Version | 0.4.0-draft |
 | Status | **PROPOSED.** The stack direction is CONFIRMED (C-003): Next.js, NestJS, PostgreSQL, Turborepo. Everything else is a proposal recorded in [ADRs](D2-adr/README.md) until approved. |
 | Owner role | Technical architect |
-| Updated | 2026-10-12 |
+| Updated | 2026-10-14 |
 | Depends on | [C-srs](C-srs/C00-srs-overview.md), [D1 Stack assessment](D1-stack-assessment-and-versions.md), [E Database design](E-database-design.md) |
+| Amended by | [ADR-019](D2-adr/ADR-019-supabase-postgres.md) (PostgreSQL 17 on Supabase), [ADR-020](D2-adr/ADR-020-valkey-nginx-droplet.md) (Valkey; host nginx instead of Caddy), [ADR-021](D2-adr/ADR-021-separate-web-api-origins.md) (separate web and API origins). §4, §6.1 and §7.1 are updated to match. |
 
 ## 1. Architecture drivers from the hospital workflows
 
@@ -56,7 +57,7 @@ Next.js is **CONFIRMED** (C-003). The comparison below explains the trade-offs, 
 | --- | --- | --- |
 | Nature of the staff app | Long-lived, authenticated, highly interactive workstation screens: queues, worklists, forms. SEO is irrelevant. | A natural fit for exactly this kind of app. |
 | Server rendering benefit | Fast first paint of the shell. Server-side auth gating before the page loads. Useful for the **patient portal** (public pages, slow mobile networks). | None, unless an SSR framework is added. |
-| Runtime to operate | Requires a Node server process (standalone output) and patching for framework-level vulnerabilities (e.g., the December 2025 React Server Components CVEs and the 2026-10-14 security release, CX-019). | Static files served by Caddy. Smaller attack surface. |
+| Runtime to operate | Requires a Node server process (standalone output) and patching for framework-level vulnerabilities (e.g., the December 2025 React Server Components CVEs and the 2026-10-14 security release, CX-019). | Static files served by nginx. Smaller attack surface. |
 | Complexity for agents | Server/client component boundaries, caching semantics and Server Actions add ways to write data or leak caches incorrectly. | One mental model: the browser calls the API. |
 | Routing, i18n, layouts | Built-in nested layouts, i18n routing support (`next-intl`), file-system routing. | Needs a router library (React Router or TanStack Router) and i18n setup. |
 | One framework for staff + portal | Yes. | A separate SSR solution for the portal if SEO or first-load performance matters. |
@@ -74,7 +75,7 @@ Next.js is **CONFIRMED** (C-003). The comparison below explains the trade-offs, 
 - if the team finds the server/client boundary slows delivery or causes defects in review
 - if operating a Node SSR runtime for the staff app becomes a security or ops burden
 
-The staff app could then become a Vite SPA served by Caddy, with Next.js kept only for the portal. The API design is unaffected because all business logic lives in NestJS.
+The staff app could then become a Vite SPA served by nginx, with Next.js kept only for the portal. The API design is unaffected because all business logic lives in NestJS.
 
 ## 4. Runtime components and responsibilities
 
@@ -83,21 +84,25 @@ flowchart LR
   subgraph Browser["Hospital workstation browser"]
     UI["Staff web app (Next.js client components + TanStack Query)"]
   end
-  subgraph VPS["VPS (Docker Compose network)"]
-    Caddy["Caddy reverse proxy: TLS, routing, headers"]
-    Web["web: Next.js standalone server (UI shell, SSR of layout)"]
-    API["api: NestJS (commands, queries, authz, audit)"]
-    Worker["worker: NestJS standalone (BullMQ processors, outbox relay, adapters, PDF jobs)"]
-    PG[("PostgreSQL 18: system of record")]
-    Redis[("Redis-protocol store: BullMQ queues, cache, rate limits")]
-    PDF["pdf-renderer: headless Chromium (isolated)"]
+  CF["Cloudflare: DNS, proxy, TLS Full (strict)"]
+  subgraph VPS["VPS"]
+    Nginx["nginx on the host: TLS (certbot), one server block per hostname, headers, real visitor IP"]
+    subgraph Compose["Docker Compose network"]
+      Web["web: Next.js standalone server (UI shell, SSR of layout)"]
+      API["api: NestJS (commands, queries, authz, audit)"]
+      Worker["worker: NestJS standalone (BullMQ processors, outbox relay, adapters, PDF jobs)"]
+      Redis[("Valkey: BullMQ queues, cache, rate limits")]
+      PDF["pdf-renderer: headless Chromium (isolated)"]
+    end
   end
+  PG[("PostgreSQL 17 on Supabase: system of record (off-VPS)")]
   Obj[("S3-compatible object storage (off-VPS)")]
   Ext["Analyzers / payment / SMS (future)"]
-  UI -->|HTTPS| Caddy
-  Caddy -->|/api/*| API
-  Caddy -->|everything else| Web
-  Web -->|server-side fetch with user cookie| API
+  UI -->|HTTPS| CF
+  CF --> Nginx
+  Nginx -->|"healthcare.… (web origin)"| Web
+  Nginx -->|"healthcareapi.… (API origin)"| API
+  UI -.->|"fetch with credentials, CORS (ADR-021)"| API
   API --> PG
   API --> Redis
   API -->|presigned URLs / uploads| Obj
@@ -110,12 +115,12 @@ flowchart LR
 
 | Component | Owns | Must not |
 | --- | --- | --- |
-| **Caddy** (reverse proxy) | TLS certificates, HTTP→HTTPS redirect, routing `/api/*` to API, security headers, request size limits, access logs (no bodies). | Hold business logic or authorization. |
-| **web** (Next.js) | Presentation, navigation, forms, client-side validation (the same Zod schemas), language switching, print views (HTML/CSS), calling the API. | Write to the database, decide permissions, compute authoritative money values, cache tenant data across users. |
-| **api** (NestJS) | Authentication, sessions, authorization, every business command and query, transactions, idempotency, audit, outbox writes, presigned file access, OpenAPI document. | Call slow external providers inside a DB transaction; run heavy reports inline beyond the interactive budget. |
+| **nginx** (reverse proxy on the host, ADR-020) | TLS certificates (certbot), HTTP→HTTPS redirect, one server block per hostname (web origin → web, API origin → api, ADR-021), restoring the real visitor IP from Cloudflare, security headers, request size limits, access logs (no bodies). | Hold business logic or authorization. Add CORS headers: the API owns its CORS allow-list. |
+| **web** (Next.js) | Presentation, navigation, forms, client-side validation (the same Zod schemas), language switching, print views (HTML/CSS). The **browser** calls the API origin directly; the Next.js server never holds the user's session (ADR-021). | Write to the database, decide permissions, compute authoritative money values, cache tenant data across users. |
+| **api** (NestJS) | Authentication, sessions, authorization, every business command and query, transactions, idempotency, audit, outbox writes, presigned file access, OpenAPI document, the CORS allow-list for the web origin (ADR-021). | Call slow external providers inside a DB transaction; run heavy reports inline beyond the interactive budget. |
 | **worker** (NestJS standalone) | Outbox relay, BullMQ processors (PDF rendering, report jobs, notifications, reconciliation, exports, maintenance), integration adapters (inbox/outbox), scheduled jobs. | Accept user HTTP traffic; bypass domain interfaces; act without re-checking tenant and permission context for delayed sensitive actions. |
-| **PostgreSQL** | All business records, constraints, RLS, audit, outbox/inbox, idempotency records, job state of record. | Be reachable from the internet. |
-| **Redis-protocol store** | BullMQ queues, short-lived caches (§12), rate-limit counters, session lookup cache (optional). | Be the only copy of anything important. If Redis is lost, the outbox replays jobs (ADR-006). |
+| **PostgreSQL** (17, managed on Supabase, ADR-019) | All business records, constraints, RLS, audit, outbox/inbox, idempotency records, job state of record. Tables live in the `hms` schema. | Be reachable through Supabase's Data API, or be used by the app as `postgres`/`service_role` (they bypass RLS). |
+| **Valkey** (Redis-protocol store, ADR-020) | BullMQ queues, short-lived caches (§12), rate-limit counters, session lookup cache (optional). | Be the only copy of anything important. If Valkey is lost, the outbox replays jobs (ADR-006). |
 | **pdf-renderer** | Rendering HTML print templates to PDF with Bangla fonts, in a sandboxed container with no internet egress. | Fetch arbitrary URLs. It only receives HTML from the worker. |
 | **Object storage** | Generated PDFs, exports, uploaded attachments, backup repository (separate bucket/credentials). | Serve public URLs. Access is through short-lived presigned URLs issued after authorization. |
 
@@ -197,13 +202,15 @@ packages/mod-billing/src/
 
 ```mermaid
 sequenceDiagram
-  participant B as Browser
-  participant C as Caddy
+  participant B as Browser (web origin)
+  participant C as nginx (API host)
   participant A as NestJS API
   participant G as AuthGuard + TenantContext
-  participant D as PostgreSQL
-  B->>C: POST /api/v1/billing/invoices/{id}/payments (cookie, X-CSRF-Token, Idempotency-Key)
-  C->>A: forward (X-Request-Id added)
+  participant D as PostgreSQL (Supabase)
+  Note over B,A: Before most commands the browser sends a CORS preflight (OPTIONS), cached up to 2 h
+  B->>C: POST https://{api-host}/api/v1/billing/invoices/{id}/payments (Origin, cookie, X-CSRF-Token, Idempotency-Key)
+  C->>A: forward (real visitor IP, X-Request-Id added)
+  A->>A: Origin in CORS allow-list? CSRF token matches session?
   A->>G: validate session → membership → tenantId, facilityIds, permissions
   G-->>A: RequestContext {tenantId, userId, membershipId, perms, correlationId}
   A->>D: BEGIN, then SELECT set_config('app.tenant_id', :t, true), set_config('app.user_id', :u, true)
@@ -216,6 +223,7 @@ sequenceDiagram
 - The tenant ID comes **only** from the authenticated session's membership (GP-3).
 - Path or body IDs are looked up within that tenant.
 - A browser header or subdomain is never authority (v0.3 TENANCY).
+- The web app and the API are separate origins (ADR-021): staging uses `healthcare.bytespate.com` (web) and `healthcareapi.bytespate.com` (API). The API returns CORS headers only to allow-listed web origins. CORS controls who may *read* responses; it does not replace the CSRF check.
 
 ### 6.2 Database layer (ADR-003, details in [E §6](E-database-design.md#6-row-level-security-and-database-roles))
 
@@ -261,10 +269,10 @@ Because `tenant_id` is on every row, moving a tenant from the shared database to
 
 - NestJS owns login.
   - Passwords are hashed with **argon2id**.
-  - The session is an opaque random ID in an `httpOnly; Secure; SameSite=Lax` cookie, scoped to the app domain.
-  - The session row in PostgreSQL holds user, membership, created/last-seen, expiry and MFA status. An optional Redis lookup cache invalidates on revoke.
+  - The session is an opaque random ID in an `httpOnly; Secure; SameSite=Lax` cookie, **host-only on the API host**: no `Domain` attribute. It must never be scoped to `bytespate.com`, which would send it to every subdomain, including the unrelated ecommerce site (ADR-021).
+  - The session row in PostgreSQL holds user, membership, created/last-seen, expiry and MFA status. An optional Valkey lookup cache invalidates on revoke.
 - Idle and absolute timeouts per CP-12. Rotate the session ID at login and at privilege change (tenant switch, MFA step-up).
-- **CSRF:** every state-changing request must carry an `X-CSRF-Token` equal to the session's token. The `Origin`/`Referer` must match the app origin.
+- **CSRF:** every state-changing request must carry an `X-CSRF-Token` equal to the session's token, and its `Origin` must be an allow-listed web origin. This is mandatory, not defence in depth: every `*.bytespate.com` site is "same-site", so `SameSite=Lax` alone does not block requests from them (ADR-021).
 - **MFA:** TOTP (RFC 6238) for privileged roles (CP-12). Recovery codes are stored hashed.
 - Lockout and rate limiting per account and IP (FR-ACC-004, NFR-SEC-005).
 - **Alternatives considered:**
@@ -668,7 +676,7 @@ sequenceDiagram
 | Worker crash mid-job | Stalled job | BullMQ stalled-job recovery; idempotent processors |
 | API crash mid-request | Uncertain outcome | Transaction rolled back or committed atomically; client retries with the same key |
 | Revoked membership with jobs pending | Delayed action under revoked authority | Processors re-check the membership for sensitive delayed actions; system jobs run as system actor with tenant scope only |
-| Database unavailable | Total outage | Health checks fail; Caddy returns a maintenance page; paper downtime procedure (RB-03); restore per J |
+| Database unavailable | Total outage | Health checks fail; nginx returns a maintenance page; paper downtime procedure (RB-03); restore per J (Supabase backups, ADR-019) |
 | Clock skew | Wrong business dates | NTP; database `now()` is the source of record time (NFR-TIME-001) |
 
 ## 16. Decisions and ADRs

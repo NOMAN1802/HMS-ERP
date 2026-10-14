@@ -1,6 +1,38 @@
 # Changes since v0.3 and unresolved decisions
 
-**Pack version 0.4.0-draft · 2026-10-12**
+**Pack version 0.4.0-draft · 2026-10-12 · decisions added 2026-10-13/14 (§0)**
+
+## 0. Decisions made after the pack (2026-10-13/14)
+
+The product owner made these decisions while the repository was scaffolded. They override the sections of D, J and K noted below. Those documents were updated on 2026-10-14 and carry an "Amended by" line.
+
+| ADR | Decision | Replaces | Documents updated |
+| --- | --- | --- | --- |
+| [ADR-018](docs/D2-adr/ADR-018-vitest.md) | **Vitest** for unit/integration/API tests (Playwright stays for E2E) | ADR-013 (Jest); resolves **Q-054** | — |
+| [ADR-019](docs/D2-adr/ADR-019-supabase-postgres.md) | Database is **PostgreSQL 17 on Supabase** (Singapore), used only as Postgres; tables in schema `hms`; UUIDv7 from Prisma | PostgreSQL 18 on the VPS, pgBackRest backups | D §4, J §3/§6/§8, K §2/§6/§7 |
+| [ADR-020](docs/D2-adr/ADR-020-valkey-nginx-droplet.md) | **Valkey 9** for queues and cache; **host nginx + certbot** instead of Caddy; staging on the **existing DigitalOcean droplet (SGP1)**, shared with the ecommerce app | Redis vs Valkey choice (CX-015); Caddy | D §4, J §2–§5, K §2/§4 |
+| [ADR-021](docs/D2-adr/ADR-021-separate-web-api-origins.md) | **Separate web and API hostnames**: `healthcare.bytespate.com` (web) and `healthcareapi.bytespate.com` (API), behind Cloudflare. CORS allow-list on the API, host-only session cookie, CSRF mandatory | Single domain with `/api/*` routed by the proxy | D §4/§6.1/§7.1, J §5, K §7 |
+
+**Questions answered:**
+- **Q-054** (test runner): Vitest (ADR-018).
+- **Q-044** (VPS provider/region): DigitalOcean, Singapore, for staging (ADR-020). The production server is still open.
+- **CX-015** (Redis vs Valkey licence): Valkey (ADR-020).
+
+**Verified in the repository** (details in [`docs/STACK_VERSIONS.md`](../STACK_VERSIONS.md) and the ADRs):
+- tenant isolation with RLS + `withTenant()` passed ADR-003 evidence items 1–4 on local PostgreSQL 17 and on Supabase's transaction pooler (T-FND-04);
+- the RLS coverage check (T-DB-02) runs in CI.
+
+**New open items from these decisions:**
+
+| Item | Owner | Before |
+| --- | --- | --- |
+| Disable Supabase's Data API for the project | Product owner | Any real data |
+| Supabase plan (the free plan pauses after 7 days idle and has no PITR) | Product owner | Pilot (RG-3) |
+| Test whether `BYPASSRLS` roles (`hms_relay`, `hms_control`) can be created on Supabase | Integrator | T-PLT-03 |
+| Restore drill (RB-07) against Supabase backups | DevOps | RG-1 |
+| Give HMS its own registrable domain, so it no longer shares a "site" with the ecommerce app (ADR-021) | Product owner | Production |
+| Staging deployment (T-FND-05, T-OPS-01) | Deployment owner (a team member) | — |
+| Next.js security release of 2026-10-14: upgrade from 16.4.0 before any deploy | Integrator | Any deploy |
 
 ## 1. In one paragraph
 
