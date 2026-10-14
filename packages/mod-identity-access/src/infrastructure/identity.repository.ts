@@ -122,6 +122,39 @@ export function findSessionByTokenHash(
   return prisma.userSession.findUnique({ where: { tokenHash } });
 }
 
+/**
+ * Replaces a session with a new one in ONE transaction (hospital switch, ADR-004). The old
+ * session is revoked only if it is still valid; if a logout or another switch got there
+ * first, nothing is created and false is returned. The row lock taken by the update makes
+ * two simultaneous switches queue up, so only the first can win.
+ */
+export async function replaceSession(
+  prisma: PrismaClient,
+  oldTokenHash: Uint8Array<ArrayBuffer>,
+  now: Date,
+  replacement: NewSession,
+): Promise<boolean> {
+  return prisma.$transaction(
+    async (tx) => {
+      const revoked = await tx.userSession.updateMany({
+        where: {
+          tokenHash: oldTokenHash,
+          revokedAt: null,
+          idleExpiresAt: { gt: now },
+          absoluteExpiresAt: { gt: now },
+        },
+        data: { revokedAt: now },
+      });
+      if (revoked.count !== 1) return false;
+      await tx.userSession.create({
+        data: { ...replacement, lastSeenAt: replacement.createdAt },
+      });
+      return true;
+    },
+    { maxWait: 5_000, timeout: 5_000 },
+  );
+}
+
 export async function touchSession(
   prisma: PrismaClient,
   tokenHash: Uint8Array<ArrayBuffer>,

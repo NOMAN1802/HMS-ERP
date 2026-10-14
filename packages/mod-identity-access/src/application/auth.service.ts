@@ -27,6 +27,7 @@ import {
   insertSession,
   isMembershipActive,
   listMembershipsForUser,
+  replaceSession,
   recordFailedLogin,
   resetFailedLogins,
   revokeSession,
@@ -128,10 +129,14 @@ export class AuthService {
     // Another user's or an inactive membership looks the same as a missing one (D section 8.3).
     if (!chosen) throw new DomainError('NOT_FOUND', 'Membership not found');
 
-    // ADR-004: a new session ID on hospital switch; the old token stops working at once.
-    await revokeSession(this.prisma, ctx.tokenHash, this.clock.now());
-    // Switching hospital must not extend the 12-hour limit (FR-ACC-003, C-032).
-    return this.startSession(user, memberships, chosen, meta, ctx.absoluteExpiresAt);
+    // ADR-004: a new session ID on hospital switch. The old token is revoked and the new
+    // session created in one transaction, so a concurrent logout or switch cannot leave two
+    // valid sessions or revive a logged-out one. The new session keeps the old absolute expiry
+    // (FR-ACC-003, C-032).
+    return this.startSession(user, memberships, chosen, meta, {
+      absoluteLimit: ctx.absoluteExpiresAt,
+      replacing: ctx.tokenHash,
+    });
   }
 
   async resolveSession(token: string): Promise<AuthContext | null> {
@@ -142,12 +147,17 @@ export class AuthService {
 
     // Disabling the account or ending the hospital access must stop an open session on the
     // next request (FR-ACC-010, ADR-004).
+    // The session is also revoked for good here, so restoring access later cannot revive an
+    // old (or stolen) cookie. The database also revokes at the moment access is removed
+    // (migration revoke_sessions_on_access_change); this covers anything that slipped through.
     const user = await findUserById(this.prisma, session.userId);
-    if (!user || !isAccountUsable(user, now)) return null;
-    if (
-      session.membershipId &&
-      !(await isMembershipActive(this.prisma, session.userId, session.membershipId))
-    ) {
+    const accessOk =
+      user !== null &&
+      isAccountUsable(user, now) &&
+      (!session.membershipId ||
+        (await isMembershipActive(this.prisma, session.userId, session.membershipId)));
+    if (!accessOk) {
+      await revokeSession(this.prisma, tokenHash, now);
       return null;
     }
 
@@ -185,8 +195,9 @@ export class AuthService {
     memberships: MembershipRecord[],
     bound: MembershipRecord | null,
     meta: RequestMeta,
-    absoluteLimit?: Date,
+    options: { absoluteLimit?: Date; replacing?: Uint8Array<ArrayBuffer> } = {},
   ): Promise<IssuedSession> {
+    const { absoluteLimit, replacing } = options;
     const token = newSessionToken();
     const now = this.clock.now();
     const fresh = newSessionTimes(now, this.config.timeouts);
@@ -196,14 +207,21 @@ export class AuthService {
           idleExpiresAt: new Date(Math.min(fresh.idleExpiresAt.getTime(), absoluteLimit.getTime())),
         }
       : fresh;
-    await insertSession(this.prisma, {
+    const row = {
       tokenHash: hashSessionToken(token),
       userId: user.id,
       tenantId: bound?.tenantId ?? null,
       membershipId: bound?.id ?? null,
       createdAt: now,
       ...times,
-    });
+    };
+    if (replacing) {
+      if (!(await replaceSession(this.prisma, replacing, now, row))) {
+        throw new DomainError('UNAUTHENTICATED', 'Session ended');
+      }
+    } else {
+      await insertSession(this.prisma, row);
+    }
     if (bound) {
       await this.tenantAudit(bound.tenantId, user.id, bound.id, 'auth.login.succeeded', meta);
     }
