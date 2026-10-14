@@ -17,8 +17,44 @@ git push origin <branch> && git push reza <branch> && git push noman <branch>
 ```
 
 - Never force-push. If a remote rejects a push, fetch and investigate instead.
+- **No AI attribution in commits or PRs.** Never add a `Co-Authored-By: Claude` trailer, a "Generated with Claude Code" line or a session link. `.claude/settings.json` sets `attribution` to empty for everyone; do not override it.
+- Commit messages follow the same character rule as code (below): plain ASCII punctuation only.
 - If the remotes are missing (fresh clone), add them:
   `git remote add reza https://github.com/rezaulrht/HMS-ERP.git && git remote add noman https://github.com/NOMAN1802/HMS-ERP.git`
+
+## Code rules (strict)
+
+### Characters
+
+In code, comments, config files and commit messages use **plain ASCII punctuation only**. Never use:
+
+| Do not use                             | Use instead                            |
+| -------------------------------------- | -------------------------------------- |
+| em dash `—`, en dash `–`               | `-`, a comma, a colon or two sentences |
+| curly quotes `“ ” ‘ ’`                 | straight quotes `" '`                  |
+| ellipsis character `…`                 | `...`                                  |
+| arrows `→ ←` and symbols like `≥ ≤ ×`  | `->`, `>=`, `<=`, `x`                  |
+| non-breaking or other invisible spaces | a normal space                         |
+
+User-facing text that must contain Bangla script or the taka sign (`৳`) lives in the i18n message catalogs (`packages/i18n`), not in code.
+
+### Clean, reusable code
+
+- One responsibility per function and file. Prefer small pure functions; keep I/O at the edges (`infrastructure/`, controllers).
+- Reuse before writing: check `packages/*` (contracts, domain-kernel, platform, authz, testkit) for an existing helper. Shared logic goes in a package, never copy-pasted between apps or modules.
+- Follow the package boundaries in D §5 (`pnpm boundaries:check` must pass) and the module layout `domain/ application/ infrastructure/ http/ jobs/`.
+- Descriptive names, no abbreviations except domain ones (MRN, OPD, IPD, LIS). No dead code, no commented-out code, no `any` without a comment explaining why.
+- Every tenant-data query goes through `withTenant()` (ADR-003). Money uses the domain-kernel money type (ADR-007), never floating point.
+
+### Comments
+
+- Every feature file starts with a short comment: what the feature does and the IDs it implements (task `T-*`, requirements `FR-*`, decisions `C-*`/`ADR-*`).
+- Comment the **why** of non-obvious logic: business rules, security checks, workarounds. Do not comment what the code already says.
+- Keep comments true: update them in the same change as the code.
+
+## Feature log (`docs/log/`)
+
+After completing each feature or task, add a log entry in `docs/log/` **in the same commit**, using the template in [`docs/log/README.md`](docs/log/README.md): what was built, files changed, decisions applied, commands run with results, known limitations and how to debug it. The log is the first place to look when an error appears later.
 
 ## Secrets
 
