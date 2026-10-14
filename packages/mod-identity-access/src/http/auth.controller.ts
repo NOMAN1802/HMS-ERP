@@ -19,11 +19,16 @@ import {
   sessionCookieOptions,
 } from './session-cookie.js';
 
+// The id is stored in append-only tables, so only a short safe token is accepted from clients.
+const SAFE_REQUEST_ID = /^[A-Za-z0-9-]{1,64}$/;
+
 function metaOf(request: AuthenticatedRequest): RequestMeta {
   const correlationId = request.headers['x-request-id'];
   return {
     ...(request.ip ? { ipAddress: request.ip } : {}),
-    ...(typeof correlationId === 'string' ? { correlationId } : {}),
+    ...(typeof correlationId === 'string' && SAFE_REQUEST_ID.test(correlationId)
+      ? { correlationId }
+      : {}),
   };
 }
 

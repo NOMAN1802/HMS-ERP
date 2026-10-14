@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createPrismaClient, withTenant, type PrismaClient } from '@hms/database';
 import { DomainError, fixedClock, type FixedClock } from '@hms/domain-kernel';
@@ -175,13 +176,14 @@ describe('AuthService', () => {
   });
 
   it('does not store a password-like username in the auth event', async () => {
-    await expectCode(login('My Secret Passw0rd With Spaces!', 'x'), 'INVALID_CREDENTIALS');
-    const events = await prisma.authEvent.findMany({
-      where: { reason: 'UNKNOWN_USER' },
-      orderBy: { occurredAt: 'desc' },
-      take: 20,
+    // A unique marker keeps this test independent of rows from earlier runs (the table is
+    // append-only, so old rows cannot be cleaned up).
+    const marker = randomUUID();
+    await expectCode(login(`My Secret ${marker} With Spaces!`, 'x'), 'INVALID_CREDENTIALS');
+    const stored = await prisma.authEvent.findMany({
+      where: { usernameAttempted: { contains: marker } },
     });
-    expect(events.some((e) => e.usernameAttempted?.includes('secret'))).toBe(false);
+    expect(stored).toEqual([]);
   });
 
   it('logout revokes the session', async () => {

@@ -6,7 +6,12 @@ import type { LoginRequest, MembershipSummary, SessionResponse } from '@hms/cont
 import { withTenant, type PrismaClient } from '@hms/database';
 import { DomainError, type Clock } from '@hms/domain-kernel';
 import { appendAuditEvent, PRISMA } from '@hms/platform';
-import { assertAccountCanLogin, normalizeUsername } from '../domain/account-policy.js';
+import {
+  assertAccountCanLogin,
+  isAccountUsable,
+  normalizeUsername,
+  safeUsernameForLog,
+} from '../domain/account-policy.js';
 import {
   isSessionExpired,
   newSessionTimes,
@@ -20,6 +25,7 @@ import {
   findUserById,
   findUserByUsername,
   insertSession,
+  isMembershipActive,
   listMembershipsForUser,
   recordFailedLogin,
   resetFailedLogins,
@@ -37,6 +43,7 @@ export interface AuthContext {
   tenantId: string | null;
   membershipId: string | null;
   tokenHash: Uint8Array<ArrayBuffer>;
+  absoluteExpiresAt: Date;
 }
 
 export interface RequestMeta {
@@ -66,9 +73,21 @@ export class AuthService {
     const user = await findUserByUsername(this.prisma, username);
     if (!user) {
       await verifyAgainstDummy(input.password);
+      const loggable = safeUsernameForLog(username);
       await this.authEvent('auth.login.failed', 'FAILED', meta, {
-        usernameAttempted: username,
+        ...(loggable ? { usernameAttempted: loggable } : {}),
         reason: 'UNKNOWN_USER',
+      });
+      throw new DomainError('INVALID_CREDENTIALS', INVALID);
+    }
+
+    // The password is checked first, so lock and disabled states are only revealed to someone
+    // who knows the password (otherwise status would leak to anyone who guesses a username).
+    if (!(await verifyPassword(user.passwordHash, input.password))) {
+      await recordFailedLogin(this.prisma, user.id);
+      await this.authEvent('auth.login.failed', 'FAILED', meta, {
+        userId: user.id,
+        reason: 'BAD_PASSWORD',
       });
       throw new DomainError('INVALID_CREDENTIALS', INVALID);
     }
@@ -79,15 +98,6 @@ export class AuthService {
       const reason = error instanceof DomainError ? error.code : 'ACCOUNT_CHECK_FAILED';
       await this.authEvent('auth.login.failed', 'DENIED', meta, { userId: user.id, reason });
       throw error;
-    }
-
-    if (!(await verifyPassword(user.passwordHash, input.password))) {
-      await recordFailedLogin(this.prisma, user.id);
-      await this.authEvent('auth.login.failed', 'FAILED', meta, {
-        userId: user.id,
-        reason: 'BAD_PASSWORD',
-      });
-      throw new DomainError('INVALID_CREDENTIALS', INVALID);
     }
 
     const memberships = await this.activeMemberships(user.id);
@@ -120,7 +130,8 @@ export class AuthService {
 
     // ADR-004: a new session ID on hospital switch; the old token stops working at once.
     await revokeSession(this.prisma, ctx.tokenHash, this.clock.now());
-    return this.startSession(user, memberships, chosen, meta);
+    // Switching hospital must not extend the 12-hour limit (FR-ACC-003, C-032).
+    return this.startSession(user, memberships, chosen, meta, ctx.absoluteExpiresAt);
   }
 
   async resolveSession(token: string): Promise<AuthContext | null> {
@@ -128,6 +139,17 @@ export class AuthService {
     const session = await findSessionByTokenHash(this.prisma, tokenHash);
     const now = this.clock.now();
     if (!session || isSessionExpired(session, now)) return null;
+
+    // Disabling the account or ending the hospital access must stop an open session on the
+    // next request (FR-ACC-010, ADR-004).
+    const user = await findUserById(this.prisma, session.userId);
+    if (!user || !isAccountUsable(user, now)) return null;
+    if (
+      session.membershipId &&
+      !(await isMembershipActive(this.prisma, session.userId, session.membershipId))
+    ) {
+      return null;
+    }
 
     if (shouldTouch(session.lastSeenAt, now)) {
       const idleExpiresAt = slideIdleExpiry(session, now, this.config.timeouts);
@@ -138,6 +160,7 @@ export class AuthService {
       tenantId: session.tenantId,
       membershipId: session.membershipId,
       tokenHash,
+      absoluteExpiresAt: session.absoluteExpiresAt,
     };
   }
 
@@ -162,10 +185,17 @@ export class AuthService {
     memberships: MembershipRecord[],
     bound: MembershipRecord | null,
     meta: RequestMeta,
+    absoluteLimit?: Date,
   ): Promise<IssuedSession> {
     const token = newSessionToken();
     const now = this.clock.now();
-    const times = newSessionTimes(now, this.config.timeouts);
+    const fresh = newSessionTimes(now, this.config.timeouts);
+    const times = absoluteLimit
+      ? {
+          absoluteExpiresAt: absoluteLimit,
+          idleExpiresAt: new Date(Math.min(fresh.idleExpiresAt.getTime(), absoluteLimit.getTime())),
+        }
+      : fresh;
     await insertSession(this.prisma, {
       tokenHash: hashSessionToken(token),
       userId: user.id,

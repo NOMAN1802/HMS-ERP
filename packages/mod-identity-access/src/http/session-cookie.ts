@@ -1,8 +1,10 @@
 // Session cookie settings (ADR-004, ADR-021). No Domain attribute: the cookie stays on the API
-// host and is never sent to other *.bytespate.com sites.
+// host and is never sent to other *.bytespate.com sites. The __Host- prefix makes browsers
+// refuse a lookalike cookie set from a sibling subdomain (cookie tossing); it requires Secure,
+// Path=/ and no Domain, which is exactly what is set here.
 import type { CookieOptions } from 'express';
 
-export const SESSION_COOKIE = 'hms_session';
+export const SESSION_COOKIE = '__Host-hms_session';
 
 const BASE_OPTIONS: CookieOptions = { httpOnly: true, secure: true, sameSite: 'lax', path: '/' };
 

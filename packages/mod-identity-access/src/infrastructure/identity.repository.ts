@@ -80,7 +80,9 @@ export async function listMembershipsForUser(
 ): Promise<MembershipRecord[]> {
   const rows = await withUserContext(prisma, userId, (tx) =>
     tx.membership.findMany({
-      where: { userId },
+      // Only active access is ever offered; inactive hospitals stay hidden (and their names
+      // are hidden from the user by the tenant policy).
+      where: { userId, status: 'ACTIVE' },
       include: { tenant: { select: { nameEn: true, nameBn: true } } },
       orderBy: { createdAt: 'asc' },
     }),
@@ -92,6 +94,21 @@ export async function listMembershipsForUser(
     tenantNameEn: row.tenant.nameEn,
     tenantNameBn: row.tenant.nameBn,
   }));
+}
+
+/** Whether the membership still belongs to this user and is active (checked on every request). */
+export async function isMembershipActive(
+  prisma: PrismaClient,
+  userId: string,
+  membershipId: string,
+): Promise<boolean> {
+  const row = await withUserContext(prisma, userId, (tx) =>
+    tx.membership.findFirst({
+      where: { id: membershipId, userId, status: 'ACTIVE' },
+      select: { id: true },
+    }),
+  );
+  return row !== null;
 }
 
 export async function insertSession(prisma: PrismaClient, session: NewSession): Promise<void> {

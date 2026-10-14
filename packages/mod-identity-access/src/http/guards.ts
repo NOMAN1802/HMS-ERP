@@ -51,15 +51,16 @@ export class CsrfGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    if (hasFlag(this.reflector, PUBLIC_KEY, context) || SAFE_METHODS.has(request.method)) {
-      return true;
-    }
+    if (SAFE_METHODS.has(request.method)) return true;
     // Browsers always send Origin on cross-origin writes; a foreign origin is refused even
-    // with a valid token. Non-browser clients without Origin still need the token.
+    // with a valid token. The check also covers public routes (login): without it another
+    // *.bytespate.com site could post a form that logs the victim into the attacker's account.
+    // Non-browser clients without Origin still need the token (except on public routes).
     const origin = request.headers.origin;
     if (origin !== undefined && !this.allowedOrigins.has(origin)) {
       throw new DomainError('CSRF_TOKEN_INVALID', 'Request origin is not allowed');
     }
+    if (hasFlag(this.reflector, PUBLIC_KEY, context)) return true;
     const candidate = request.headers['x-csrf-token'];
     const valid =
       typeof candidate === 'string' &&
