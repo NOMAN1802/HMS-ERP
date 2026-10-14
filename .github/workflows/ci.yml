@@ -40,6 +40,8 @@ jobs:
       DATABASE_MIGRATOR_URL: postgresql://hms_migrator:dev_migrator@localhost:5432/hms?schema=hms
       DATABASE_URL: postgresql://hms_app:dev_app@localhost:5432/hms?schema=hms
       VALKEY_URL: redis://localhost:6379/0
+      CSRF_SECRET: ci-only-csrf-secret-0123456789abcdef
+      CORS_ORIGINS: http://localhost:3100
       TZ: UTC
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

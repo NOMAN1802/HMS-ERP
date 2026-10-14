@@ -16,7 +16,13 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
-      "passThroughEnv": ["DATABASE_URL", "DATABASE_MIGRATOR_URL", "VALKEY_URL"]
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "DATABASE_MIGRATOR_URL",
+        "VALKEY_URL",
+        "CSRF_SECRET",
+        "CORS_ORIGINS"
+      ]
     },
     "test:e2e": {
       "dependsOn": ["^build"],

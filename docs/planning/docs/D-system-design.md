@@ -359,8 +359,8 @@ Errors use RFC 9457 `application/problem+json` with the stable `code` from [C00 
 
 | Code | HTTP |
 | --- | --- |
-| `UNAUTHENTICATED` | 401 |
-| `PERMISSION_DENIED`, `SEGREGATION_OF_DUTY`, `ENTITLEMENT_MISSING` | 403 |
+| `UNAUTHENTICATED`, `INVALID_CREDENTIALS` | 401 |
+| `PERMISSION_DENIED`, `SEGREGATION_OF_DUTY`, `ENTITLEMENT_MISSING`, `CSRF_TOKEN_INVALID`, `TENANT_NOT_SELECTED`, `MEMBERSHIP_NOT_ACTIVE` | 403 |
 | `NOT_FOUND` (including other tenant) | 404 |
 | `VALIDATION_FAILED` | 422 |
 | `STALE_RECORD`, `INVALID_TRANSITION`, `IDEMPOTENCY_KEY_REUSED`, `PAYMENT_NOT_ELIGIBLE`, `AMOUNT_EXCEEDS_BALANCE`, `BED_UNAVAILABLE`, `BED_NEEDS_CLEANING`, `CAPACITY_FULL`, `INSUFFICIENT_STOCK`, `BATCH_EXPIRED` | 409 |
@@ -368,9 +368,10 @@ Errors use RFC 9457 `application/problem+json` with the stable `code` from [C00 
 | missing `If-Match` | 428 |
 | `ACCOUNT_LOCKED` | 423 |
 | rate limited | 429 |
+| `INTERNAL_ERROR` | 500 |
 | `SERVICE_UNAVAILABLE` | 503 |
 
-The `type` URL above uses a placeholder domain; it is decided at scaffold.
+The problem `type` is `urn:hms:error:<CODE>` (decided at T-ACC-01), for example `urn:hms:error:ACCOUNT_LOCKED`.
 
 ### 8.4 Example contract: RecordPayment (illustrative, not frozen)
 
