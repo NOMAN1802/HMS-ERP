@@ -2,6 +2,11 @@
 
 One entry per completed feature or task, written in the same commit as the code. When something breaks later, start here: find the entry for the area, then follow its "How to debug" and "Known limitations".
 
+## When to write an entry
+
+- Write the entry in the same commit as the work it describes. Never create a branch or open a pull request only for a log entry.
+- A summary that spans several features goes in a pull request description, or rides in the next feature pull request. It is not a branch of its own. If no feature branch is open, the entry waits and goes into the next feature commit.
+
 ## File naming
 
 `YYYY-MM-DD-<task-id>-<short-slug>.md`, for example `2026-10-13-T-FND-04-tenant-rls.md`. Use the date the feature was finished. If there is no task ID, use a short slug only.
@@ -46,8 +51,10 @@ Where it can fail, which logs or queries to check, and how to reproduce locally.
 
 ## Entries
 
-| Date       | Entry                                                                         |
-| ---------- | ----------------------------------------------------------------------------- |
-| 2026-10-13 | [T-FND-01/02/03: monorepo scaffold](2026-10-13-T-FND-01-monorepo-scaffold.md) |
-| 2026-10-13 | [T-FND-04: tenant isolation with RLS](2026-10-13-T-FND-04-tenant-rls.md)      |
-| 2026-10-14 | [T-ACC-01: login, sessions and CSRF](2026-10-14-T-ACC-01-login.md)            |
+| Date       | Entry                                                                               |
+| ---------- | ----------------------------------------------------------------------------------- |
+| 2026-10-13 | [T-FND-01/02/03: monorepo scaffold](2026-10-13-T-FND-01-monorepo-scaffold.md)       |
+| 2026-10-13 | [T-FND-04: tenant isolation with RLS](2026-10-13-T-FND-04-tenant-rls.md)            |
+| 2026-10-14 | [T-ACC-01: login, sessions and CSRF](2026-10-14-T-ACC-01-login.md)                  |
+| 2026-10-14 | [Day summary](2026-10-14-day-summary.md)                                            |
+| 2026-10-15 | [T-UI-01 (decisions): UI foundation](2026-10-15-T-UI-01-ui-foundation-decisions.md) |

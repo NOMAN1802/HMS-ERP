@@ -4,10 +4,10 @@
 | --- | --- |
 | Document | F UI/UX design guidance (navigation, screens, flows, states, accessibility, localization, print layouts) |
 | Version | 0.4.0-draft |
-| Status | **PROPOSED.** Interaction rules that implement confirmed behavior are marked with their decision IDs. Layouts, shortcuts and Bangla wording need staff usability testing and native-speaker review (Q-050). |
+| Status | **PROPOSED.** Interaction rules that implement confirmed behavior are marked with their decision IDs. Layouts, shortcuts and Bangla wording need staff usability testing and native-speaker review (Q-050). Visual foundation (device tiers, fonts, color tokens, in-house components, reuse rules) is decided in [ADR-022](D2-adr/ADR-022-ui-foundation.md); where this document and ADR-022 differ, ADR-022 wins. |
 | Owner role | UX lead + domain leads (front desk, cashier, lab, nursing) |
-| Updated | 2026-10-12 |
-| Depends on | [C-srs](C-srs/C00-srs-overview.md), [A1 Glossary](A1-glossary.md), ADR-002, ADR-010, ADR-015, ADR-017 |
+| Updated | 2026-10-15 |
+| Depends on | [C-srs](C-srs/C00-srs-overview.md), [A1 Glossary](A1-glossary.md), ADR-002, ADR-010, ADR-015, ADR-017, ADR-022 |
 
 ## 1. Design principles for this hospital product
 
@@ -77,6 +77,16 @@ The release column refers to the proposed options ([B §9](B-business-requiremen
 | SCR-25 | Support grant approvals | ADM | FR-SUP-001 | A B C |
 | SCR-26 | Management dashboard | MGT | FR-REP-007 | A B C |
 | SCR-27 | Print preview (shared) | All printing roles | FR-PRN-001..005 | A B C |
+
+### 2.3 Device tiers and shell (ADR-022)
+
+| Tier | Width | Shell | Notes |
+| --- | --- | --- | --- |
+| Phone | below 768 | Top bar with search, bottom tab bar (at most 5 items plus More) | 44 px targets; tables become stacked rows; payment, registration, result entry, verify/release, price publish and audit show "Use a tablet or computer" (C-054) |
+| Tablet | 768 to 1279 | 72 px icon rail plus top bar | List and detail one pane at 768, split at 1024; 44 px targets |
+| Desktop | 1280 and up | 240 px collapsible sidebar plus top bar | Keyboard-first; compact tables; content capped at 2xl |
+
+Breakpoint logic lives only in layout components (ADR-022 section 9); screens do not write it.
 
 ## 3. Patient and visit context; safe context switching
 
@@ -223,8 +233,8 @@ The Bangla labels are **PROPOSED** and need native review (Q-050). Final labels 
 
 - Language switch in the top bar. Applies immediately, without losing form input (FR-I18N-001).
 - `lang="bn"` / `lang="en"` set on `<html>` for correct font and screen-reader behavior.
-- Fonts: self-hosted Noto Sans Bengali + Noto Sans (or approved alternatives). Base size 15–16 px for Bangla body text, line height ≥ 1.6.
-- Digits and date format follow the tenant setting (Q-050). Stored data is unaffected.
+- Fonts (ADR-022 section 5): English heading TikTok Sans, body Geist; Bangla heading and UI text Noto Sans Bengali, Bangla body Tiro Bangla (reading text only, one weight). Self-hosted, no CDN. Body 16 px, line height >= 1.6 for Bangla.
+- Digits follow the UI language (C-036). Grouping is lakh and crore in both languages (C-057), for example 10,00,000.00, on screen and on print. Date pattern follows the tenant setting (Q-050). Stored data is unaffected.
 - Bilingual fields (names, service names) use paired inputs labeled "নাম (বাংলা)" and "Name (English)". At least one is required where the SRS says so.
 - Layouts tolerate roughly 30% longer strings. Buttons don't truncate critical words; tables wrap headers.
 
@@ -381,13 +391,13 @@ New registration
 
 | Layer | Proposal | Why here | Alternative |
 | --- | --- | --- | --- |
-| Styling | Tailwind CSS v4 with design tokens (CSS variables) for color, spacing, typography, density | Consistent dense layouts; print CSS in the same system; agents produce it reliably | CSS Modules |
-| Components | `packages/ui` built from copy-in, accessible primitives: shadcn/ui on Tailwind (default) or React Aria Components. Decide in spike T-UI-01 with the cashier/registration keyboard prototype. | Owned code; accessibility and keyboard behavior are requirements | — |
+| Styling | Tailwind CSS v4 with design tokens (CSS variables) for color, spacing, typography, density, defined once in `packages/ui` (ADR-022 sections 2 to 5) | Consistent dense layouts; print CSS in the same system; agents produce it reliably | CSS Modules |
+| Components | `packages/ui`: in-house primitives on semantic HTML, each with a keyboard contract, test-first tests and an axe check (ADR-022 section 8). No styled kit. | Owned code, white-label ready; accessibility and keyboard behavior are requirements | React Aria Components if in-house contracts prove too costly |
 | Forms | React Hook Form + Zod resolver | Large forms, shared schemas | TanStack Form |
 | Tables | TanStack Table (headless) + TanStack Virtual | Full keyboard control; server-side data | AG Grid Community |
 | Server state | TanStack Query | Polling, invalidation, uncertain-outcome checks | SWR |
 | i18n | next-intl, catalogs in `packages/i18n` | ADR-017 | i18next |
-| Icons | One open-source icon set, bundled locally | Consistent status icons | — |
+| Icons | One family bundled locally, imported only through an `Icon` component (ADR-022 section 10) | Consistent status icons; a family swap is one file | Phosphor (default) or Tabler |
 
 **Core custom components:**
 - `PatientBanner`
@@ -407,6 +417,8 @@ New registration
 - Semantic status colors defined once (success, warning, danger, info, neutral), each paired with an icon.
 - Two densities: comfortable for forms, compact for worklists.
 - Print stylesheet tokens separate from screen.
+- Status tokens are named by meaning (idle, active, review, attention, done, problem), not by hue (ADR-022 section 3).
+- Screens compose layouts and patterns from `packages/ui`; they contain no raw widgets, color literals or shell breakpoint logic (ADR-022 section 9).
 
 ## 13. Usability validation
 

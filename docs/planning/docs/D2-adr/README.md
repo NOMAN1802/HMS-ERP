@@ -29,6 +29,7 @@
 | [ADR-019](ADR-019-supabase-postgres.md) | Supabase as managed PostgreSQL 17 | — | ACCEPTED 2026-10-13 | Product owner |
 | [ADR-020](ADR-020-valkey-nginx-droplet.md) | Valkey for queues; nginx on the existing droplet | — | ACCEPTED 2026-10-13 | Product owner |
 | [ADR-021](ADR-021-separate-web-api-origins.md) | Separate web and API origins (amends D §4, ADR-002, ADR-004) | — | ACCEPTED 2026-10-14 | Product owner |
+| [ADR-022](ADR-022-ui-foundation.md) | UI foundation: visual system, in-house components, reuse rules (amends ADR-017 items 3 and 5) | - | ACCEPTED 2026-10-15 | Product owner |
 
 **ADR template:**
 - Status

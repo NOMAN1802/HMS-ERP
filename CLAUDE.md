@@ -63,7 +63,7 @@ User-facing text that must contain Bangla script or the taka sign (`৳`) lives 
 
 ## Feature log (`docs/log/`)
 
-After completing each feature or task, add a log entry in `docs/log/` **in the same commit**, using the template in [`docs/log/README.md`](docs/log/README.md): what was built, files changed, decisions applied, commands run with results, known limitations and how to debug it. The log is the first place to look when an error appears later.
+After completing each feature or task, add a log entry in `docs/log/` **in the same commit**, using the template in [`docs/log/README.md`](docs/log/README.md): what was built, files changed, decisions applied, commands run with results, known limitations and how to debug it. The log is the first place to look when an error appears later. Never create a branch or open a pull request only for a log entry; it always rides in the feature's commit and pull request.
 
 ## Secrets
 
