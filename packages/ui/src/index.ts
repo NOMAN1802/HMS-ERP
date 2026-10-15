@@ -44,3 +44,4 @@ export {
   SessionExpiryDialog,
   type SessionExpiryDialogProps,
 } from './patterns/SessionExpiryDialog.js';
+export { Alert, type AlertProps, type AlertTone } from './patterns/Alert.js';
