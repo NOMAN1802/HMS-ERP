@@ -69,6 +69,8 @@ Still open in RG-0: naming owners for the integrator, QA, DevOps and domain-revi
 | Vector (SVG) master of the Bytespate logo | Product owner | Print templates |
 | Tenant color override (guarded) | Product owner | When scheduled (needs SCR-23) |
 | Native-speaker review of Bangla status labels (Q-050) | Native reviewer | RG-3 |
+| Permission codes in the session so the shell can filter navigation (T-ACC-02) | Integrator | First role-based screen |
+| Global handling of a 401 from any API call (expired flow) | UI lead | First data screen (T-UI-03) |
 
 ## 1. In one paragraph
 
