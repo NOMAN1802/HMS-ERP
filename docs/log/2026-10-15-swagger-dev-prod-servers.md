@@ -14,10 +14,10 @@ requests to, with no duplicate docs page or separate deployment to maintain.
 
 ## Files
 
-| File                     | Purpose                                                        |
-| ------------------------- | ---------------------------------------------------------------- |
-| `apps/api/src/main.ts`   | Adds `.addServer(...)` for dev and production to `DocumentBuilder`|
-| `.env.example`           | Documents the optional `API_PUBLIC_URL` override for staging     |
+| File                   | Purpose                                                            |
+| ---------------------- | ------------------------------------------------------------------ |
+| `apps/api/src/main.ts` | Adds `.addServer(...)` for dev and production to `DocumentBuilder` |
+| `.env.example`         | Documents the optional `API_PUBLIC_URL` override for staging       |
 
 ## Decisions applied
 
@@ -33,9 +33,9 @@ requests to, with no duplicate docs page or separate deployment to maintain.
 
 ## Verification
 
-| Command                                                      | Result                                                      |
-| --------------------------------------------------------------| -------------------------------------------------------------|
-| `pnpm --filter @hms/api typecheck`                           | 0 errors                                                     |
+| Command                                                               | Result                                                                                       |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `pnpm --filter @hms/api typecheck`                                    | 0 errors                                                                                     |
 | `pnpm --filter @hms/api dev` + `curl http://localhost:4100/docs-json` | `servers` array lists both `http://localhost:4100` and `https://healthcareapi.bytespate.com` |
 
 ## Known limitations
