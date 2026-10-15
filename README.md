@@ -57,3 +57,7 @@ pnpm --filter @hms/web exec playwright install chromium
 - [ADR-018](docs/planning/docs/D2-adr/ADR-018-vitest.md): Vitest instead of Jest
 - [ADR-019](docs/planning/docs/D2-adr/ADR-019-supabase-postgres.md): Supabase as managed PostgreSQL 17
 - [ADR-020](docs/planning/docs/D2-adr/ADR-020-valkey-nginx-droplet.md): Valkey, nginx, existing droplet
+
+## Branches and deployment
+
+Work branches go into `dev`; release PRs go from `dev` into `main` ([docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md)). Staging runs whatever is on `main` and is deployed by hand by the project lead. Development, including AI agents, never deploys and never needs server access. What is deployed, how `main` reaches it, and the "deploy impact" every change must state are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

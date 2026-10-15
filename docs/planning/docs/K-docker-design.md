@@ -4,7 +4,7 @@
 | --- | --- |
 | Document | K Docker design (images, Compose layouts, runtime hardening, secrets, environment, versioning, migrations) |
 | Version | 0.4.0-draft |
-| Status | **PROPOSED.** Docker is part of the supplied foundation. **The template files were not built or executed.** The Compose files were only parsed as YAML. Placeholders appear as `<<…>>`. |
+| Status | **PROPOSED.** Docker is part of the supplied foundation. **The template files were not built or executed.** The running staging uses its own Dockerfiles and `compose.yaml` kept on the server, not these templates (see [DEPLOYMENT.md](../../DEPLOYMENT.md)). The Compose files were only parsed as YAML. Placeholders appear as `<<…>>`. |
 | Owner role | DevOps lead; integrator (build scripts) |
 | Updated | 2026-10-14 |
 | Amended by | [ADR-019](D2-adr/ADR-019-supabase-postgres.md) (no database container: PostgreSQL 17 on Supabase), [ADR-020](D2-adr/ADR-020-valkey-nginx-droplet.md) (Valkey; nginx runs on the host, not as a container), [ADR-021](D2-adr/ADR-021-separate-web-api-origins.md) (separate web and API hostnames; no server-side API calls with the user's cookie). §1, §2, §4–§7 and §9 are updated to match. |

@@ -12,3 +12,5 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 ## Project rules
 
 See [CLAUDE.md](CLAUDE.md): push every change to all three git remotes (`origin`, `reza`, `noman`), and keep secrets in `.env` only.
+
+Agents do development only. Never deploy, never ask for SSH or server credentials, and state the deploy impact of every change. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).

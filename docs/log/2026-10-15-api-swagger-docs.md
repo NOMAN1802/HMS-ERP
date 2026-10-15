@@ -14,14 +14,14 @@ spec at `/docs-json`.
 
 ## Files
 
-| File                                            | Purpose                                              |
-| ------------------------------------------------ | ----------------------------------------------------- |
-| `apps/api/src/app.controller.ts`                | New status route reporting the bound port             |
-| `apps/api/src/app.module.ts`                    | Registers `AppController` alongside `HealthController`|
-| `apps/api/src/main.ts`                          | Builds and mounts the Swagger document at `/docs`      |
-| `apps/api/src/health/health.controller.ts`      | Added `@ApiTags`/`@ApiOperation` for Swagger grouping |
-| `apps/api/package.json`                         | Added `@nestjs/swagger` dependency                     |
-| `pnpm-workspace.yaml`                           | Denied the `@scarf/scarf` telemetry postinstall script |
+| File                                       | Purpose                                                |
+| ------------------------------------------ | ------------------------------------------------------ |
+| `apps/api/src/app.controller.ts`           | New status route reporting the bound port              |
+| `apps/api/src/app.module.ts`               | Registers `AppController` alongside `HealthController` |
+| `apps/api/src/main.ts`                     | Builds and mounts the Swagger document at `/docs`      |
+| `apps/api/src/health/health.controller.ts` | Added `@ApiTags`/`@ApiOperation` for Swagger grouping  |
+| `apps/api/package.json`                    | Added `@nestjs/swagger` dependency                     |
+| `pnpm-workspace.yaml`                      | Denied the `@scarf/scarf` telemetry postinstall script |
 
 ## Decisions applied
 
@@ -43,13 +43,13 @@ spec at `/docs-json`.
 
 ## Verification
 
-| Command                                | Result                                              |
-| --------------------------------------- | ---------------------------------------------------- |
-| `pnpm install`                         | Lockfile passes supply-chain policy, no errors       |
-| `pnpm --filter @hms/api typecheck`     | 0 errors                                             |
-| `pnpm --filter @hms/api dev` + `curl http://localhost:4100/api/v1` | `{"message":"NEST server is running on port 4100"}` |
-| `curl -I http://localhost:4100/docs`   | HTTP 200                                             |
-| `curl http://localhost:4100/docs-json` | Valid OpenAPI 3.0 document listing `/api/v1` and `/health` |
+| Command                                                            | Result                                                     |
+| ------------------------------------------------------------------ | ---------------------------------------------------------- |
+| `pnpm install`                                                     | Lockfile passes supply-chain policy, no errors             |
+| `pnpm --filter @hms/api typecheck`                                 | 0 errors                                                   |
+| `pnpm --filter @hms/api dev` + `curl http://localhost:4100/api/v1` | `{"message":"NEST server is running on port 4100"}`        |
+| `curl -I http://localhost:4100/docs`                               | HTTP 200                                                   |
+| `curl http://localhost:4100/docs-json`                             | Valid OpenAPI 3.0 document listing `/api/v1` and `/health` |
 
 ## Known limitations
 
