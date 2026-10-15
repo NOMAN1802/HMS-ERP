@@ -1,0 +1,51 @@
+/*
+ * Entry point for the design tokens and base styles: imported once by the web app after
+ * `@import 'tailwindcss'` (T-UI-01 S1, ADR-022).
+ * Light is the default theme; dark is opt-in through data-theme="dark" only.
+ */
+@import './tokens.css';
+@import './theme-light.css';
+@import './theme-dark.css';
+
+@layer base {
+  html {
+    color-scheme: light;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    /* Tiro Bangla has one weight: never let the browser fake a bold (ADR-022 section 5). */
+    font-synthesis: none;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    color: var(--color-heading);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--font-ui);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-primary-soft);
+    color: var(--color-text);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--color-primary);
+  }
+}

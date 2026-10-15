@@ -1,0 +1,43 @@
+/*
+ * Dark theme color tokens. Created now, switched on later (C-055, ADR-022 section 4).
+ * Applies only under data-theme="dark", never from the system preference, until the theme has
+ * been reviewed. Must define exactly the same token names as theme-light.css (checked by test).
+ * The :root prefix raises specificity above Tailwind's :root theme variables.
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #090b0c; /* mist-950 */
+  --color-surface: #161b1d; /* mist-900 */
+  --color-border: #22292b; /* mist-800 */
+  --color-border-strong: #67787c; /* mist-500 */
+
+  --color-text: #f9fbfb; /* mist-50 */
+  --color-text-muted: #d0d6d8; /* mist-300 */
+  --color-heading: #f0fdfa; /* teal-50 */
+
+  --color-primary: #00d5be; /* teal-400 */
+  --color-on-primary: #022f2e; /* teal-950 */
+  --color-primary-strong: #46ecd5; /* teal-300, brighter on press in dark */
+  --color-primary-soft: #022f2e; /* teal-950 */
+  --color-focus: #00d5be; /* teal-400 */
+
+  --color-danger: #c10007; /* red-700 */
+  --color-on-danger: #fef2f2; /* red-50 */
+
+  --color-accent: #00d3f2; /* cyan-400 */
+  --color-accent-soft: #053345; /* cyan-950 */
+
+  --color-status-idle-bg: #22292b; /* mist-800 */
+  --color-status-idle-text: #f1f3f3; /* mist-100 */
+  --color-status-active-bg: #162456; /* blue-950 */
+  --color-status-active-text: #bedbff; /* blue-200 */
+  --color-status-review-bg: #3c0366; /* purple-950 */
+  --color-status-review-text: #e9d4ff; /* purple-200 */
+  --color-status-attention-bg: #461901; /* amber-950 */
+  --color-status-attention-text: #fee685; /* amber-200 */
+  --color-status-done-bg: #032e15; /* green-950 */
+  --color-status-done-text: #b9f8cf; /* green-200 */
+  --color-status-problem-bg: #460809; /* red-950 */
+  --color-status-problem-text: #ffc9c9; /* red-200 */
+}
