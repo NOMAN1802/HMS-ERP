@@ -1,3 +1,4 @@
+// @vitest-environment node
 // Contrast and parity guard for the design tokens.
 // Implements: T-UI-01, ADR-022 section 9 (rule 5), NFR-ACC-001, C-055.
 // Reads the theme CSS as text, so a token changed to something unreadable, a token missing from
@@ -51,6 +52,8 @@ const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['color-text', 'color-surface'],
   ['color-text-muted', 'color-bg'],
   ['color-text-muted', 'color-surface'],
+  ['color-text', 'color-surface-hover'],
+  ['color-text-muted', 'color-surface-hover'],
   ['color-heading', 'color-bg'],
   ['color-heading', 'color-surface'],
   ['color-primary', 'color-bg'],

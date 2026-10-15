@@ -50,3 +50,29 @@
     caret-color: var(--color-primary);
   }
 }
+
+/* Overlay motion (ADR-022 section 13): short ease-out, no motion for reduced-motion users. */
+@keyframes hms-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hms-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@utility motion-fade {
+  animation: hms-fade-in var(--motion-overlay) var(--ease-out);
+}
+
+@utility motion-pop {
+  animation: hms-pop-in var(--motion-overlay) var(--ease-out);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: hms-fade-in;
+  }
+}

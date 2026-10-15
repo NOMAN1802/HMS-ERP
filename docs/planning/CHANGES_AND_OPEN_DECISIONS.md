@@ -64,7 +64,7 @@ Still open in RG-0: naming owners for the integrator, QA, DevOps and domain-revi
 
 | Item | Owner | Before |
 | --- | --- | --- |
-| Spike checks: Tiro Bangla at body size on 1366x768 monitors, Bengali digit alignment, Geist tabular figures (border value resolved: mist-500 `#67787c`) | UI lead | T-UI-01 done |
+| Spike checks still open: Tiro Bangla on low-resolution 1366x768 monitors, Bengali digit alignment, Geist tabular figures (border value resolved: mist-500 `#67787c`; components and keyboard contracts built, see the T-UI-01 log) | UI lead | T-UI-01 done |
 | Confirm icon family (Phosphor default, Tabler alternative) | Product owner | T-UI-01 start |
 | Vector (SVG) master of the Bytespate logo | Product owner | Print templates |
 | Tenant color override (guarded) | Product owner | When scheduled (needs SCR-23) |

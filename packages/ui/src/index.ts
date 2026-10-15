@@ -1,3 +1,28 @@
 // Design-system components, built in-house on semantic HTML (ADR-022). Design tokens and base
-// styles are exported as `@hms/ui/styles.css`.
-export {};
+// styles are exported as `@hms/ui/styles.css`. Feature screens import everything from here
+// (T-UI-01, ADR-022 section 9: raw widgets, color literals and formatting stay out of apps).
+export { Icon, type IconName, type IconProps } from './icons/Icon.js';
+export {
+  Button,
+  IconButton,
+  type ButtonProps,
+  type ButtonSize,
+  type ButtonVariant,
+  type IconButtonProps,
+} from './primitives/Button.js';
+export { TextInput, type TextInputProps } from './primitives/TextInput.js';
+export { Field, type FieldControlProps, type FieldProps } from './primitives/Field.js';
+export { StatusBadge, type StatusBadgeProps, type StatusKind } from './primitives/StatusBadge.js';
+export { Dialog, type DialogProps, type DialogSize } from './primitives/Dialog.js';
+export { Menu, type MenuItem, type MenuProps, type MenuTriggerProps } from './primitives/Menu.js';
+export { Tabs, type TabItem, type TabsProps } from './primitives/Tabs.js';
+export { Combobox, type ComboboxOption, type ComboboxProps } from './primitives/Combobox.js';
+export {
+  ToastProvider,
+  useToast,
+  type ToastOptions,
+  type ToastProviderProps,
+  type ToastTone,
+} from './primitives/Toast.js';
+export { announce } from './hooks/announcer.js';
+export { useControllableState } from './hooks/use-controllable-state.js';
