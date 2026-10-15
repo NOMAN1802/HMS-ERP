@@ -4,8 +4,8 @@ One entry per completed feature or task, written in the same commit as the code.
 
 ## When to write an entry
 
-- Write the entry in the same commit as the work it describes. Never open a pull request only for a log entry.
-- A summary that spans several features goes in a pull request description, or rides in the next feature pull request. It is not a branch of its own.
+- Write the entry in the same commit as the work it describes. Never create a branch or open a pull request only for a log entry.
+- A summary that spans several features goes in a pull request description, or rides in the next feature pull request. It is not a branch of its own. If no feature branch is open, the entry waits and goes into the next feature commit.
 
 ## File naming
 
