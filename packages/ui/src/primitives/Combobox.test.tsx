@@ -225,4 +225,45 @@ describe('Combobox review findings', () => {
     fireEvent.keyDown(input, { key: 'Escape', isComposing: true });
     expect(onOpenChange).not.toHaveBeenCalled();
   });
+
+  it('shows the selected label, not the initial text, when both are given', () => {
+    render(
+      <Combobox
+        {...base}
+        options={OPTIONS}
+        value={OPTIONS[1] as ComboboxOption}
+        initialQuery="Patient One"
+      />,
+    );
+    const input = screen.getByRole('combobox', { name: 'Search patient' }) as HTMLInputElement;
+    expect(input.value).toBe('Rahima Khatun');
+  });
+
+  it('shows a corrected or translated label for the same selected option', () => {
+    const original = OPTIONS[0] as ComboboxOption;
+    const view = render(<Combobox {...base} options={OPTIONS} value={original} />);
+    const input = screen.getByRole('combobox', { name: 'Search patient' }) as HTMLInputElement;
+    expect(input.value).toBe('Rahim Uddin');
+
+    view.rerender(
+      <Combobox
+        {...base}
+        options={OPTIONS}
+        value={{ ...original, label: 'Rahim Uddin (corrected)' }}
+      />,
+    );
+    expect(input.value).toBe('Rahim Uddin (corrected)');
+  });
+
+  it('treats a keyCode 229 Escape as the input method, not as a clear', async () => {
+    const user = userEvent.setup();
+    render(<Combobox {...base} options={OPTIONS} />);
+    const input = screen.getByRole('combobox', { name: 'Search patient' }) as HTMLInputElement;
+    await user.type(input, 'ra');
+    await user.keyboard('{Escape}');
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.keyDown(input, { key: 'Escape', keyCode: 229 });
+    expect(input.value).toBe('ra');
+  });
 });

@@ -23,6 +23,7 @@ import {
   useState,
 } from 'react';
 import { announce, ensureAnnouncer } from '../hooks/announcer.js';
+import { isImeKeyEvent } from '../hooks/composition.js';
 import { moveIndex } from '../hooks/navigation.js';
 import { useDismiss } from '../hooks/use-dismiss.js';
 import { cx } from '../utils/cx.js';
@@ -233,7 +234,7 @@ export function Combobox({
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
     // The input method owns these keys while composing.
-    if (composing.current || event.nativeEvent.isComposing) return;
+    if (composing.current || isImeKeyEvent(event.nativeEvent)) return;
     const active = activeOption;
     const action = keyAction({
       key: event.key,

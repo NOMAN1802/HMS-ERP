@@ -56,14 +56,24 @@ Three defects reported in review of PR #6. Each was reproduced with a failing te
 
 API change inside this unreleased PR: `Combobox` `value`, `defaultValue` and `onValueChange` now carry the option object, not an id.
 
+### Second review round
+
+Three edge cases found when re-reviewing the fixes. Each was reproduced with a failing test first (3 red, with the reported values), then fixed.
+
+| Finding                                                                                                                      | Cause                                                                                             | Fix                                                                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Initial text overrode the selected patient's name (selection "Patient Two", initial text "Patient One" showed "Patient One") | The initial state read `initialQuery ?? selected.label`, the opposite of the documented rule      | A selection's label always wins over the initial text                                                                          |
+| A corrected or translated name for the same patient id was not shown                                                         | The sync compared ids only                                                                        | The sync tracks id and label; a new object with the same id and label changes nothing                                          |
+| A composing Escape reported only as keyCode 229 still cleared the field                                                      | The combobox's own handler checked `isComposing` but not keyCode 229; only the global handler did | One shared check, `isImeKeyEvent` in `hooks/composition.ts`, used by the combobox and `useDismiss`; no other raw check remains |
+
 ## Verification
 
 | Command                                      | Result                                                                                                                                                                       |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm --filter @hms/config-eslint test`      | 16 passed; mutation check (raw-widget selector disabled) failed 5, restored                                                                                                  |
-| `pnpm --filter @hms/ui test`                 | 129 passed (18 files)                                                                                                                                                        |
+| `pnpm --filter @hms/ui test`                 | 135 passed (19 files)                                                                                                                                                        |
 | `pnpm --filter @hms/web test:e2e`            | 11 passed (axe on the gallery, with the dialog open and with a toast; keyboard flows for dialog, menu, tabs, combobox; Bangla query; phone width has no horizontal overflow) |
-| `pnpm turbo run lint typecheck build test`   | 50 of 50 tasks passed (contracts 7, config-eslint 16, kernel 2, database 14, ui 129, platform 6, identity 42, api 11 tests)                                                  |
+| `pnpm turbo run lint typecheck build test`   | 50 of 50 tasks passed (contracts 7, config-eslint 16, kernel 2, database 14, ui 135, platform 6, identity 42, api 11 tests)                                                  |
 | `pnpm boundaries:check`                      | No violations                                                                                                                                                                |
 | Visual pass in Chromium at 1366 and 390 wide | Bangla names shape correctly, no overflow, focus ring and overlay shadow as designed                                                                                         |
 

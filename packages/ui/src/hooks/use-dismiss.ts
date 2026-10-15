@@ -2,6 +2,7 @@
 // Closes an overlay on Escape or on a press outside it, top-most overlay only.
 // Implements: T-UI-01, NFR-ACC-001.
 import { type RefObject, useEffect, useRef } from 'react';
+import { isImeKeyEvent } from './composition.js';
 import { registerOverlay } from './overlay-stack.js';
 
 export interface DismissOptions {
@@ -30,9 +31,8 @@ export function useDismiss({
     const overlay = registerOverlay();
 
     function onKeyDown(event: KeyboardEvent): void {
-      // While an input method is composing (Bangla phonetic input), Escape cancels the
-      // composition. keyCode 229 is how some browsers report that key. It is not ours to handle.
-      if (event.isComposing || event.keyCode === 229) return;
+      // While an input method is composing, Escape cancels the composition. It is not ours.
+      if (isImeKeyEvent(event)) return;
       if (closeOnEscape && event.key === 'Escape' && overlay.isTop()) {
         event.stopPropagation();
         onDismissRef.current();

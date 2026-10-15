@@ -13,6 +13,11 @@ export interface ComboboxOption {
   disabled?: boolean;
 }
 
+interface SelectionKey {
+  id: string | null;
+  label: string | null;
+}
+
 export interface SelectionOptions {
   value?: ComboboxOption | null;
   defaultValue: ComboboxOption | null;
@@ -42,24 +47,28 @@ export function useComboboxSelection({
     onChange: onValueChange,
   });
   const selectedId = selected?.id ?? null;
-  const [text, setText] = useState(() => initialQuery ?? selected?.label ?? '');
+  // A selection's label always wins over the initial text, so the two never disagree.
+  const [text, setText] = useState(() => selected?.label ?? initialQuery ?? '');
+  const selectedLabel = selected?.label ?? null;
   // The selection this component just made itself, so the text is not rewritten for it.
-  const ownChange = useRef<{ id: string | null } | null>(null);
-  const syncedId = useRef(selectedId);
+  const ownChange = useRef<SelectionKey | null>(null);
+  const synced = useRef<SelectionKey>({ id: selectedId, label: selectedLabel });
 
+  // The id alone is not enough: the same patient with a corrected or translated name must show
+  // the new name. A new object with the same id and label changes nothing.
   useEffect(() => {
-    if (syncedId.current === selectedId) return;
-    syncedId.current = selectedId;
-    if (ownChange.current?.id === selectedId) {
+    if (synced.current.id === selectedId && synced.current.label === selectedLabel) return;
+    synced.current = { id: selectedId, label: selectedLabel };
+    const own = ownChange.current;
+    if (own?.id === selectedId && own.label === selectedLabel) {
       ownChange.current = null;
       return;
     }
-    setText(selected?.label ?? '');
-    // Only a changed selection id re-syncs the text, not every new object for the same option.
-  }, [selectedId]);
+    setText(selectedLabel ?? '');
+  }, [selectedId, selectedLabel]);
 
   function changeSelection(next: ComboboxOption | null): void {
-    ownChange.current = { id: next?.id ?? null };
+    ownChange.current = { id: next?.id ?? null, label: next?.label ?? null };
     setSelected(next);
   }
 
