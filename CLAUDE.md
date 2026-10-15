@@ -31,6 +31,15 @@ git push origin <branch> && git push reza <branch> && git push noman <branch>
 - If the remotes are missing (fresh clone), add them:
   `git remote add reza https://github.com/rezaulrht/HMS-ERP.git && git remote add noman https://github.com/NOMAN1802/HMS-ERP.git`
 
+## Deployment boundary (development only)
+
+Full guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Agents work on development only; deployment belongs to the project lead and a teammate.
+
+- **Never deploy.** No `redeploy.sh`, no `docker compose` against a server, no `certbot` or `nginx`, no deploy workflow or deploy automation unless the project lead asks for it in that session.
+- **Never ask for SSH**, server credentials, Supabase or Cloudflare access, or the real `.env` of any environment. Local dev uses `.env.example` values and `pnpm services:up` only.
+- **`main` is what staging runs.** The server pulls `main` by hand after a release PR merges, so keep `main` releasable. Merging to `main` deploys nothing by itself.
+- **State the deploy impact** in every PR and release PR (new env var, migration, new service, build step, origin or CORS change, tool version bump), using the table in docs/DEPLOYMENT.md section 4. Write `Deploy impact: none` when there is none.
+
 ## Code rules (strict)
 
 ### Characters

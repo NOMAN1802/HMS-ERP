@@ -127,6 +127,8 @@ flowchart LR
 
 ## 7. Artifact publishing and deployment to VPS
 
+> **Current state (2026-10-15):** none of this pipeline exists yet. Staging is deployed by hand: the server owner pulls `main` and runs a redeploy script (build on the server, migrate, restart). Releases reach `main` only through a `dev` -> `main` release PR (docs/GIT_WORKFLOW.md section 5). Developers and AI agents do not deploy. See [DEPLOYMENT.md](../../DEPLOYMENT.md). The steps below are the target design for T-FND-03 and T-FND-05.
+
 1. **Build once** on `main`. Images are tagged `sha-<git-sha>` and pushed to GHCR. **Digests** are captured into `release.env` (artifact `release-manifest`).
 2. **Staging** (automatic, environment `staging`):
    1. SSH as `deploy` with a forced command that runs `/opt/hms/bin/deploy.sh`.

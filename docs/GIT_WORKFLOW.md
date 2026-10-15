@@ -79,6 +79,9 @@ A PR must contain, in the same change: tests for the behavior, the `docs/log/` e
    `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z && git push reza vX.Y.Z && git push noman vX.Y.Z`
 4. Versions follow [SemVer](https://semver.org/). Before the pilot go-live, versions stay at `0.x.y`: `0.(minor+1).0` for a release with features, `0.x.(patch+1)` for fixes only.
 5. Only `main` (or a tag on it) is deployed.
+6. **Merging to `main` does not deploy.** Staging runs from `main`, and the person who owns the server pulls it by hand and runs the redeploy script (see [DEPLOYMENT.md](DEPLOYMENT.md)). Developers and AI agents stop at the merge and the tag.
+7. **Release PR description:** add a "Deploy impact" list that collects every change since the last release that needs something from the server: new environment variables, migrations (expand-only or contract), new services or apps, build steps, origin or CORS changes, tool version bumps. Use the table in DEPLOYMENT.md section 4. Write `Deploy impact: none` if there is nothing. The deployer reads this list before pulling `main`.
+8. **Release content rule:** a release must not include a migration that is unsafe to apply while the previous version still runs (expand first, contract in a later release), because migrations run automatically on deploy and a code rollback does not undo them.
 
 ## 6. Hotfixes
 
