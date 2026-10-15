@@ -1,13 +1,13 @@
-# Pull-request and main-branch checks (docs/planning/docs/L-cicd-sonarqube.md §3).
+# Checks for pull requests and pushes to dev and main (docs/GIT_WORKFLOW.md, L §3).
 # Third-party actions are pinned to full commit SHAs; the comment shows the release.
 # Image scanning, secret scanning and the SonarQube job are added with T-FND-03 / T-FND-05.
 name: ci
 
 on:
   pull_request:
-    branches: [main]
+    branches: [dev, main]
   push:
-    branches: [main]
+    branches: [dev, main]
 
 permissions:
   contents: read
@@ -40,6 +40,8 @@ jobs:
       DATABASE_MIGRATOR_URL: postgresql://hms_migrator:dev_migrator@localhost:5432/hms?schema=hms
       DATABASE_URL: postgresql://hms_app:dev_app@localhost:5432/hms?schema=hms
       VALKEY_URL: redis://localhost:6379/0
+      CSRF_SECRET: ci-only-csrf-secret-0123456789abcdef
+      CORS_ORIGINS: http://localhost:3100
       TZ: UTC
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

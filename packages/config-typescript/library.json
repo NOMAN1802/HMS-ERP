@@ -6,5 +6,9 @@
     "rootDir": "${configDir}/src"
   },
   "include": ["${configDir}/src"],
-  "exclude": ["${configDir}/src/**/*.test.ts", "${configDir}/src/**/*.spec.ts"]
+  "exclude": [
+    "${configDir}/src/**/*.test.ts",
+    "${configDir}/src/**/*.test.tsx",
+    "${configDir}/src/**/*.spec.ts"
+  ]
 }

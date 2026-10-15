@@ -1,3 +1,6 @@
+// Transaction helpers that set the RLS context (ADR-003, E section 6.2). Settings are
+// transaction-local (set_config(..., true)), so they end with the transaction and never
+// leak to the next user of a pooled connection.
 import type { Prisma, PrismaClient } from './generated/prisma/client.js';
 
 export interface TenantContext {
@@ -9,31 +12,48 @@ export type TenantTx = Prisma.TransactionClient;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Runs `fn` in a transaction whose RLS tenant context is `ctx` (ADR-003, E §6.2).
- *
- * The context is set with transaction-local `set_config(..., true)`, so it ends with the
- * transaction (commit or rollback) and never leaks to the next user of a pooled connection.
- * Every tenant-data query must run inside this; outside it, RLS returns no rows.
- */
-export async function withTenant<T>(
+function assertUuid(value: string, name: string): void {
+  if (!UUID.test(value)) throw new Error(`${name} must be a UUID`);
+}
+
+async function runInContext<T>(
   prisma: PrismaClient,
-  ctx: TenantContext,
+  tenantId: string,
+  userId: string,
   fn: (tx: TenantTx) => Promise<T>,
 ): Promise<T> {
-  if (!UUID.test(ctx.tenantId)) throw new Error('withTenant: tenantId must be a UUID');
-  if (ctx.userId !== undefined && !UUID.test(ctx.userId)) {
-    throw new Error('withTenant: userId must be a UUID');
-  }
-
   return prisma.$transaction(
     async (tx) => {
-      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${ctx.tenantId}, true),
-                                  set_config('app.user_id', ${ctx.userId ?? ''}, true)`;
+      await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, true),
+                                  set_config('app.user_id', ${userId}, true)`;
       return fn(tx);
     },
     // maxWait: how long to wait for a free pooled connection (Prisma's default is 2 s).
     // timeout: how long the transaction itself may run.
     { maxWait: 5_000, timeout: 5_000, isolationLevel: 'ReadCommitted' },
   );
+}
+
+/** Runs `fn` with RLS scoped to one hospital. Every tenant-data query must run inside this. */
+export async function withTenant<T>(
+  prisma: PrismaClient,
+  ctx: TenantContext,
+  fn: (tx: TenantTx) => Promise<T>,
+): Promise<T> {
+  assertUuid(ctx.tenantId, 'withTenant: tenantId');
+  if (ctx.userId !== undefined) assertUuid(ctx.userId, 'withTenant: userId');
+  return runInContext(prisma, ctx.tenantId, ctx.userId ?? '', fn);
+}
+
+/**
+ * Runs `fn` with only the user set and no hospital: used at login to list the user's own
+ * memberships. Tenant tables stay invisible except where a policy allows the own user.
+ */
+export async function withUserContext<T>(
+  prisma: PrismaClient,
+  userId: string,
+  fn: (tx: TenantTx) => Promise<T>,
+): Promise<T> {
+  assertUuid(userId, 'withUserContext: userId');
+  return runInContext(prisma, '', userId, fn);
 }

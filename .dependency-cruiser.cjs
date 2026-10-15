@@ -19,6 +19,22 @@ module.exports = {
       },
     },
     {
+      name: 'ui-imports-i18n-only',
+      comment: 'packages/ui imports only i18n among workspace packages (ADR-022 section 9, rule 4)',
+      severity: 'error',
+      from: { path: '^packages/ui/src/' },
+      to: {
+        path: '^(packages/|@hms/)(database|platform|authz|testkit|domain-kernel|contracts|print-templates|mod-[^/]+)(/|$)',
+      },
+    },
+    {
+      name: 'packages-never-import-apps',
+      comment: 'shared packages never depend on an application (D section 5)',
+      severity: 'error',
+      from: { path: '^packages/' },
+      to: { path: '^apps/' },
+    },
+    {
       name: 'no-unresolvable',
       comment: 'every import must resolve (an undeclared workspace dependency shows up here)',
       severity: 'error',

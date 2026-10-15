@@ -1,0 +1,64 @@
+// Thin fetch wrapper for the NestJS API (ADR-002: all business reads and writes go through it).
+// - the session is the HttpOnly cookie (credentials: 'include'); this code never sees it
+// - state-changing requests carry the CSRF token the server issued for this session (ADR-021)
+// - errors become ApiError with a stable code; responses are validated with the shared contracts
+// Implements: T-UI-02, ADR-004, ADR-021.
+import { problemSchema } from '@hms/contracts';
+import { API_BASE_URL, API_PREFIX } from '../config';
+import { ApiError, CLIENT_ERROR_CODES } from './errors';
+
+let csrfToken: string | null = null;
+
+/** Set after login or a session read; cleared on logout. Kept in memory only. */
+export function setCsrfToken(token: string | null): void {
+  csrfToken = token;
+}
+
+export interface RequestOptions<T> {
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+  body?: unknown;
+  /** Validates and types the JSON body, usually `someSchema.parse`. Omit for 204 answers. */
+  parse?: (data: unknown) => T;
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  try {
+    const parsed = problemSchema.safeParse(await response.json());
+    if (parsed.success) {
+      return new ApiError(parsed.data.code, response.status, parsed.data);
+    }
+  } catch {
+    // not JSON: fall through to the generic error
+  }
+  return new ApiError(CLIENT_ERROR_CODES.UNKNOWN, response.status);
+}
+
+export async function apiRequest<T = void>(
+  path: string,
+  { method = 'GET', body, parse }: RequestOptions<T> = {},
+): Promise<T> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (method !== 'GET' && csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${API_PREFIX}${path}`, {
+      method,
+      headers,
+      credentials: 'include',
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+  } catch {
+    throw new ApiError(CLIENT_ERROR_CODES.NETWORK, 0);
+  }
+
+  if (!response.ok) throw await toApiError(response);
+  if (response.status === 204 || !parse) return undefined as T;
+
+  try {
+    return parse(await response.json());
+  } catch {
+    throw new ApiError(CLIENT_ERROR_CODES.INVALID_RESPONSE, response.status);
+  }
+}

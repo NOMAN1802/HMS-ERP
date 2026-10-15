@@ -4,7 +4,7 @@
 | --- | --- |
 | Document | K Docker design (images, Compose layouts, runtime hardening, secrets, environment, versioning, migrations) |
 | Version | 0.4.0-draft |
-| Status | **PROPOSED.** Docker is part of the supplied foundation. **The template files were not built or executed.** The Compose files were only parsed as YAML. Placeholders appear as `<<…>>`. |
+| Status | **PROPOSED.** Docker is part of the supplied foundation. **The template files were not built or executed.** The running staging uses its own Dockerfiles and `compose.yaml` kept on the server, not these templates (see [DEPLOYMENT.md](../../DEPLOYMENT.md)). The Compose files were only parsed as YAML. Placeholders appear as `<<…>>`. |
 | Owner role | DevOps lead; integrator (build scripts) |
 | Updated | 2026-10-14 |
 | Amended by | [ADR-019](D2-adr/ADR-019-supabase-postgres.md) (no database container: PostgreSQL 17 on Supabase), [ADR-020](D2-adr/ADR-020-valkey-nginx-droplet.md) (Valkey; nginx runs on the host, not as a container), [ADR-021](D2-adr/ADR-021-separate-web-api-origins.md) (separate web and API hostnames; no server-side API calls with the user's cookie). §1, §2, §4–§7 and §9 are updated to match. |
@@ -109,9 +109,9 @@ Non-secret values go in `.env` ([`env.example`](../templates/docker/env.example)
 | `VALKEY_URL` | api, worker | no (unless an ACL password is added → file) | `redis://valkey:6379/0` | Queues, cache, rate limits (Valkey speaks the Redis protocol, ADR-020) |
 | `QUEUE_PREFIX` | api, worker | no | `hms` | BullMQ key prefix |
 | `SESSION_SECRET_FILE` | api | file | — | Session token derivation/signing material |
-| `CSRF_SECRET_FILE` | api | file | — | CSRF token generation |
+| `CSRF_SECRET` (`CSRF_SECRET_FILE` in production) | api | file/secret | at least 32 characters | Key for the CSRF token HMAC (T-ACC-01). Rotating it logs everyone's CSRF tokens out until they reload the session |
 | `FIELD_ENCRYPTION_KEY_FILE` | api, worker | file | — | NID field encryption (E §5.2) |
-| `SESSION_IDLE_TIMEOUT_MIN` / `SESSION_ABSOLUTE_TIMEOUT_H` | api | no | `30` / `12` (PROPOSED) | Platform defaults; tenant config overrides (CP-12) |
+| `SESSION_IDLE_TIMEOUT_MIN` / `SESSION_ABSOLUTE_TIMEOUT_H` | api | no | `60` / `12` (C-032) | Platform defaults; tenant config overrides (CP-12) |
 | `LOGIN_LOCKOUT_THRESHOLD` / `LOGIN_LOCKOUT_MINUTES` | api | no | `5` / `15` (PROPOSED) | Defaults (CP-12) |
 | `COOKIE_DOMAIN` | api | no | **unset** | Leave unset: the session cookie is host-only on the API host. **Never** `bytespate.com`, which would send sessions to every subdomain, including the ecommerce site (ADR-021) |
 | `S3_ENDPOINT` / `S3_REGION` / `S3_BUCKET` / `S3_FORCE_PATH_STYLE` | api, worker | no | provider values | Object storage |

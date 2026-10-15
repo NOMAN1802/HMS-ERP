@@ -1,0 +1,53 @@
+/*
+ * Light theme color tokens (the default theme).
+ * Implements: T-UI-01 S1, ADR-022 sections 2 and 3, C-055.
+ *
+ * The one place color literals may be written. Tailwind generates utilities from these names
+ * (bg-primary, text-text-muted, bg-status-done-bg), so apps never need a hex value.
+ * `--color-*: initial` removes Tailwind's default palette so only these tokens exist.
+ * Every pair is checked by tokens.contrast.test.ts.
+ */
+@theme {
+  --color-*: initial;
+
+  /* Surfaces and lines */
+  --color-bg: #f9fbfb; /* mist-50 */
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f3f3; /* mist-100, hover fill for secondary and ghost controls */
+  --color-border: #e3e7e8; /* mist-200, decorative only */
+  --color-border-strong: #67787c; /* mist-500, input and outlined-button borders (3:1) */
+
+  /* Text */
+  --color-text: #161b1d; /* mist-900 */
+  --color-text-muted: #4b585b; /* mist-600 */
+  --color-heading: #022f2e; /* teal-950 */
+
+  /* Primary: "you can act here". Never a status (ADR-022 section 2). */
+  --color-primary: #00786f; /* teal-700; teal-600 fails 4.5:1 with a white label */
+  --color-on-primary: #ffffff;
+  --color-primary-strong: #005f5a; /* teal-800, hover and pressed */
+  --color-primary-soft: #f0fdfa; /* teal-50, selected row */
+  --color-focus: #009689; /* teal-600, focus ring (3:1) */
+
+  /* Danger action, destructive buttons only */
+  --color-danger: #c10007; /* red-700 */
+  --color-on-danger: #ffffff;
+
+  /* Accent: chart series 2, "New" marker, shortcut chips only */
+  --color-accent: #007595; /* cyan-700 */
+  --color-accent-soft: #ecfeff; /* cyan-50 */
+
+  /* Status: soft fill and dark text, named by meaning not hue (ADR-022 section 3) */
+  --color-status-idle-bg: #f1f3f3;
+  --color-status-idle-text: #22292b;
+  --color-status-active-bg: #dbeafe;
+  --color-status-active-text: #193cb8;
+  --color-status-review-bg: #f3e8ff;
+  --color-status-review-text: #6e11b0;
+  --color-status-attention-bg: #fef3c6;
+  --color-status-attention-text: #973c00;
+  --color-status-done-bg: #dcfce7;
+  --color-status-done-text: #016630;
+  --color-status-problem-bg: #ffe2e2;
+  --color-status-problem-text: #9f0712;
+}

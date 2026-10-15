@@ -1,6 +1,6 @@
 # ADR-017 — Bilingual UI and print implementation
 
-- **Status:** PROPOSED (P-022). The bilingual requirement is CONFIRMED (C-025). Details OPEN (Q-050).
+- **Status:** PROPOSED (P-022). The bilingual requirement is CONFIRMED (C-025). Details OPEN (Q-050). Items 3 (digit grouping) and 5 (fonts) are amended by ADR-022.
 - **Date:** 2026-10-12
 - **Approver:** Product owner + native-speaker reviewer
 

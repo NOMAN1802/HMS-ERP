@@ -4,9 +4,9 @@
 | --- | --- |
 | Document | J VPS deployment, operations, recovery and runbooks |
 | Version | 0.4.0-draft |
-| Status | **PROPOSED.** VPS hosting is CONFIRMED (C-026). **Staging:** the existing DigitalOcean droplet in SGP1 (ADR-020) with the database on Supabase (ADR-019). **The production server size and topology are not selected yet.** Sizing figures are starting assumptions to be validated by load tests ([M](M-capacity-performance.md)), not capacity guarantees. Nothing here has been deployed. |
+| Status | **PROPOSED.** VPS hosting is CONFIRMED (C-026). **Staging:** the existing DigitalOcean droplet in SGP1 (ADR-020) with the database on Supabase (ADR-019). **The production server size and topology are not selected yet.** Sizing figures are starting assumptions to be validated by load tests ([M](M-capacity-performance.md)), not capacity guarantees. **Current state (2026-10-15):** a manual staging deployment exists on the droplet, run by Docker Compose and a hand-run redeploy script from `main`. It is not the pipeline described below; what is actually deployed, and the boundary that keeps development and AI agents away from it, are in [DEPLOYMENT.md](../../DEPLOYMENT.md). The rest of this document is the target design. |
 | Owner role | DevOps lead; product owner (risk acceptance, RPO/RTO, support hours) |
-| Updated | 2026-10-14 |
+| Updated | 2026-10-15 |
 | Related | [K Docker](K-docker-design.md), [L CI/CD](L-cicd-sonarqube.md), ADR-011, ADR-014, [templates/](../templates/README.md) |
 | Amended by | [ADR-019](D2-adr/ADR-019-supabase-postgres.md): the database is PostgreSQL 17 on Supabase, not a container on the VPS; Supabase provides backups. [ADR-020](D2-adr/ADR-020-valkey-nginx-droplet.md): staging runs on the existing DigitalOcean droplet (SGP1) shared with the ecommerce app; host nginx + certbot replace Caddy; Valkey is the queue store. [ADR-021](D2-adr/ADR-021-separate-web-api-origins.md): separate web and API hostnames. §2–§7, §9.1, §10 and the runbooks are updated to match; §8 keeps the pgBackRest design only for a self-hosted database. |
 

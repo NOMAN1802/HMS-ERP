@@ -126,6 +126,8 @@ describe('RLS coverage (T-DB-02, AT-DB-001)', () => {
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'hms'
         WHERE c.relkind IN ('r', 'p')
+          -- user_session is read by token hash before a tenant is chosen (E section 6.3).
+          AND c.relname <> 'user_session'
           AND (c.relname = 'tenant' OR EXISTS (
                 SELECT 1 FROM pg_attribute a
                 WHERE a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped))
