@@ -13,6 +13,7 @@
   /* Surfaces and lines */
   --color-bg: #f9fbfb; /* mist-50 */
   --color-surface: #ffffff;
+  --color-surface-hover: #f1f3f3; /* mist-100, hover fill for secondary and ghost controls */
   --color-border: #e3e7e8; /* mist-200, decorative only */
   --color-border-strong: #67787c; /* mist-500, input and outlined-button borders (3:1) */
 
