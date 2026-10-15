@@ -46,8 +46,9 @@ Where it can fail, which logs or queries to check, and how to reproduce locally.
 
 ## Entries
 
-| Date       | Entry                                                                         |
-| ---------- | ----------------------------------------------------------------------------- |
-| 2026-10-13 | [T-FND-01/02/03: monorepo scaffold](2026-10-13-T-FND-01-monorepo-scaffold.md) |
-| 2026-10-13 | [T-FND-04: tenant isolation with RLS](2026-10-13-T-FND-04-tenant-rls.md)      |
-| 2026-10-14 | [T-ACC-01: login, sessions and CSRF](2026-10-14-T-ACC-01-login.md)            |
+| Date       | Entry                                                                               |
+| ---------- | ----------------------------------------------------------------------------------- |
+| 2026-10-13 | [T-FND-01/02/03: monorepo scaffold](2026-10-13-T-FND-01-monorepo-scaffold.md)       |
+| 2026-10-13 | [T-FND-04: tenant isolation with RLS](2026-10-13-T-FND-04-tenant-rls.md)            |
+| 2026-10-14 | [T-ACC-01: login, sessions and CSRF](2026-10-14-T-ACC-01-login.md)                  |
+| 2026-10-15 | [T-UI-01 (decisions): UI foundation](2026-10-15-T-UI-01-ui-foundation-decisions.md) |

@@ -110,6 +110,22 @@ Answered by the product owner (Bytespate) on 2026-10-14 for the first release. "
 | C-050 | **Development is local for now.** Staging deployment is owned by a team member; domains and hosting are not needed for current work. | ADR-020/021 remain the deployment design. | — |
 | C-051 | Rounding tie rule: an invoice total at exactly half a taka **rounds up** (৳452.50 → ৳453; ৳452.49 → ৳452). | Completes C-037 for invoice totals. Rounding of percentage discounts stays open (discounts are not in RP-A). | Q-020 (tie rule) |
 
+### 2.5 UI foundation decisions by the product owner (2026-10-15)
+
+Recorded in [ADR-022](D2-adr/ADR-022-ui-foundation.md); the full values (tokens, breakpoints, layers) live there.
+
+| ID | Decision | Implication | Resolves |
+| --- | --- | --- | --- |
+| C-052 | **Visual character:** calm clinical utility; dense layouts only in worklists and the lab result-entry grid. Every screen is designed and reviewed in Bangla first, then English. | Operate-mode tool (F section 1). No animation on keyboard-initiated actions. | ADR-022 s1, s13 |
+| C-053 | **Three device tiers on Tailwind default breakpoints:** phone below 768, tablet 768 to 1279, desktop 1280 and up. Design widths 360, 768 and 1366 minimum. 44 px touch targets on phone and tablet. | No custom breakpoints. | ADR-022 s6 |
+| C-054 | **Phone scope:** full support for login, choose hospital, language, doctor worklist and patient record view, ward list view, released lab report view and management dashboard. Payment, cashier session, registration, result entry, verify and release, price-list publish and audit search are tablet and desktop only and show a "use a tablet or computer" panel on a phone. | A mistyped payment is a money error; F principle 7 (unavailable is explicit). | ADR-022 s6 |
+| C-055 | **Color system:** primary teal-700 on `mist` neutrals; secondary is an outlined button style; accent cyan-700 only for chart series 2, the "New" marker and shortcut chips; six status colors (idle, active, review, attention, done, problem) as soft badges with word and icon; teal is never a status. Light and dark token files are both created; dark stays off until reviewed. | Contrast measured from Tailwind 4.3.3 values. Accent is the only hue 37 degrees or more from every used hue. | ADR-022 s2 to s4 |
+| C-056 | **Fonts:** English heading TikTok Sans, body Geist; Bangla heading and UI text Noto Sans Bengali, Bangla body Tiro Bangla (reading text only, it has one weight). One stack serves both languages. | Replaces ADR-017 item 5. Rendering and digit alignment are spike checks in T-UI-01. | ADR-022 s5 |
+| C-057 | **Digit grouping is lakh and crore in both languages**, on screen and on print (10,00,000.00). Digits still follow the UI language (C-036). | Amends ADR-017 item 3. The tenant setting stays. | ADR-022 s11 |
+| C-058 | **All UI behavior is built in-house** on semantic HTML: no native dialog, popover or date picker and no styled component kit. Packages only from the allow-list (Floating UI for positioning, TanStack Table/Virtual/Query, React Hook Form with Zod, next-intl, one icon family). Every primitive needs a keyboard contract, test-first tests and an axe check. | Replaces the shadcn / React Aria candidates of T-UI-01. Highest accessibility risk of the client; see ADR-022 consequences. | ADR-022 s8 |
+| C-059 | **Reuse rules:** one token source and one component set in `packages/ui`; layers tokens, hooks, primitives, layouts, patterns; screens in `apps/web` only compose. Money, date and digit formatting only from `packages/i18n`. Enforced by lint rules and a contrast test required in T-UI-01. | Reusability is a design rule of the app, not a preference. | ADR-022 s9 |
+| C-060 | **Branding:** two logo slots (the tenant logo, and a discreet "Powered by Bytespate"). The Bytespate logo is the placeholder tenant logo until a hospital exists. Tenant color override is not in RP-A; tokens are built so it can follow, guarded by a contrast check. | The product is shown to and sold to several hospitals. The logo is raster only; a vector master is needed before print templates. | ADR-022 s12 |
+
 ## 3. Proposed engineering decisions
 
 **Approved by the product owner on 2026-10-14:** P-001, P-002, P-003, P-004 (ADR-001, ADR-003), P-007 (ADR-002), P-008 (ADR-004), P-009 (ADR-005), P-010 (ADR-006), P-016 (ADR-012). **P-017** (ADR-013, Jest) is superseded by ADR-018 (Vitest). **P-021** (version pins) is applied in [`docs/STACK_VERSIONS.md`](../../STACK_VERSIONS.md). The rows below keep their original wording.

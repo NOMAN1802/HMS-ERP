@@ -1,6 +1,6 @@
 # Changes since v0.3 and unresolved decisions
 
-**Pack version 0.4.0-draft · 2026-10-12 · decisions added 2026-10-13/14 (§0)**
+**Pack version 0.4.0-draft · 2026-10-12 · decisions added 2026-10-13/15 (§0)**
 
 ## 0. Decisions made after the pack (2026-10-13/14)
 
@@ -12,6 +12,7 @@ The product owner made these decisions while the repository was scaffolded. They
 | [ADR-019](docs/D2-adr/ADR-019-supabase-postgres.md) | Database is **PostgreSQL 17 on Supabase** (Singapore), used only as Postgres; tables in schema `hms`; UUIDv7 from Prisma | PostgreSQL 18 on the VPS, pgBackRest backups | D §4, J §3/§6/§8, K §2/§6/§7 |
 | [ADR-020](docs/D2-adr/ADR-020-valkey-nginx-droplet.md) | **Valkey 9** for queues and cache; **host nginx + certbot** instead of Caddy; staging on the **existing DigitalOcean droplet (SGP1)**, shared with the ecommerce app | Redis vs Valkey choice (CX-015); Caddy | D §4, J §2–§5, K §2/§4 |
 | [ADR-021](docs/D2-adr/ADR-021-separate-web-api-origins.md) | **Separate web and API hostnames**: `healthcare.bytespate.com` (web) and `healthcareapi.bytespate.com` (API), behind Cloudflare. CORS allow-list on the API, host-only session cookie, CSRF mandatory | Single domain with `/api/*` routed by the proxy | D §4/§6.1/§7.1, J §5, K §7 |
+| [ADR-022](docs/D2-adr/ADR-022-ui-foundation.md) | **UI foundation**: visual system, in-house components, reuse rules (C-052..C-060) | The shadcn / React Aria choice of T-UI-01; ADR-017 items 3 and 5 | F section 2.3, 7.4, 12; G T-UI-01 |
 
 **Questions answered:**
 - **Q-054** (test runner): Vitest (ADR-018).
@@ -50,6 +51,24 @@ Still open in RG-0: naming owners for the integrator, QA, DevOps and domain-revi
 | Give HMS its own registrable domain (ADR-021) | Product owner | Production (deferred: local only, C-050) |
 | Staging deployment (T-FND-05, T-OPS-01) | Deployment owner (a team member) | Deferred (C-050) |
 | Next.js security release of 2026-10-14: upgrade from 16.4.0 | Integrator | Any deploy |
+
+**UI foundation decisions (2026-10-15):** [ADR-022](docs/D2-adr/ADR-022-ui-foundation.md), recorded as **C-052..C-060** in [A2 section 2.5](docs/A2-decision-register.md). In short:
+- calm clinical look, designed Bangla first; phone, tablet and desktop tiers (cuts at 768 and 1280) with a limited phone scope;
+- teal-700 primary on mist neutrals, cyan-700 accent for small jobs only, six status colors, dark tokens created but off;
+- fonts TikTok Sans + Geist (English) and Noto Sans Bengali + Tiro Bangla (Bangla);
+- lakh and crore digit grouping in both languages;
+- all components built in-house behind a quality gate, with reuse enforced by layers and lint rules;
+- the Bytespate logo is the placeholder tenant logo; tenant color override comes later.
+
+**Open items from these decisions:**
+
+| Item | Owner | Before |
+| --- | --- | --- |
+| Spike checks: Tiro Bangla at body size on 1366x768 monitors, Bengali digit alignment, Geist tabular figures, `--color-border-strong` value | UI lead | T-UI-01 done |
+| Confirm icon family (Phosphor default, Tabler alternative) | Product owner | T-UI-01 start |
+| Vector (SVG) master of the Bytespate logo | Product owner | Print templates |
+| Tenant color override (guarded) | Product owner | When scheduled (needs SCR-23) |
+| Native-speaker review of Bangla status labels (Q-050) | Native reviewer | RG-3 |
 
 ## 1. In one paragraph
 
