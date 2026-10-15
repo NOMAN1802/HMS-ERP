@@ -51,7 +51,7 @@ The first one is why ADR-022 requires a browser check per primitive and not only
 | `pnpm --filter @hms/config-eslint test`      | 16 passed; mutation check (raw-widget selector disabled) failed 5, restored                                                                                                  |
 | `pnpm --filter @hms/ui test`                 | 121 passed (18 files)                                                                                                                                                        |
 | `pnpm --filter @hms/web test:e2e`            | 11 passed (axe on the gallery, with the dialog open and with a toast; keyboard flows for dialog, menu, tabs, combobox; Bangla query; phone width has no horizontal overflow) |
-| `pnpm turbo run lint typecheck build test`   | See the final line of the pull request description                                                                                                                           |
+| `pnpm turbo run lint typecheck build test`   | 50 of 50 tasks passed (contracts 7, config-eslint 16, kernel 2, database 14, ui 121, platform 6, identity 42, api 11 tests)                                                  |
 | `pnpm boundaries:check`                      | No violations                                                                                                                                                                |
 | Visual pass in Chromium at 1366 and 390 wide | Bangla names shape correctly, no overflow, focus ring and overlay shadow as designed                                                                                         |
 
