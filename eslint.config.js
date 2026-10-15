@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import { uiGuardrails, webGuardrails } from '@hms/config-eslint';
 import sonarjs from 'eslint-plugin-sonarjs';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -29,4 +30,8 @@ export default tseslint.config(
       globals: { ...globals.browser },
     },
   },
+  // Reuse guardrails for the client (ADR-022 section 9): rules and their tests live in
+  // packages/config-eslint.
+  ...webGuardrails,
+  ...uiGuardrails,
 );
