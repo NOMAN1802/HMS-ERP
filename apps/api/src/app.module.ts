@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IdentityAccessModule, loadAuthConfig } from '@hms/mod-identity-access';
 import { DatabaseModule } from '@hms/platform';
+import { AppController } from './app.controller.js';
 import { HealthController } from './health/health.controller.js';
 import { parseCorsOrigins } from './http/cors.js';
 
@@ -18,6 +19,6 @@ function requireEnv(name: string): string {
       allowedOrigins: parseCorsOrigins(process.env.CORS_ORIGINS),
     }),
   ],
-  controllers: [HealthController],
+  controllers: [AppController, HealthController],
 })
 export class AppModule {}
