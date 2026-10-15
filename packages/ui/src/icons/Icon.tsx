@@ -5,6 +5,13 @@
 // Per-icon subpaths: the package root's type declarations do not resolve under NodeNext, and
 // these imports also keep the bundle to the glyphs we use.
 import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown';
+import { CaretLeft } from '@phosphor-icons/react/dist/csr/CaretLeft';
+import { CaretRight } from '@phosphor-icons/react/dist/csr/CaretRight';
+import { Buildings } from '@phosphor-icons/react/dist/csr/Buildings';
+import { DotsThree } from '@phosphor-icons/react/dist/csr/DotsThree';
+import { House } from '@phosphor-icons/react/dist/csr/House';
+import { SignOut } from '@phosphor-icons/react/dist/csr/SignOut';
+import { User } from '@phosphor-icons/react/dist/csr/User';
 import { Check } from '@phosphor-icons/react/dist/csr/Check';
 import { CheckCircle } from '@phosphor-icons/react/dist/csr/CheckCircle';
 import { Circle } from '@phosphor-icons/react/dist/csr/Circle';
@@ -20,6 +27,13 @@ import { XCircle } from '@phosphor-icons/react/dist/csr/XCircle';
 const ICONS = {
   check: Check,
   'caret-down': CaretDown,
+  'caret-left': CaretLeft,
+  'caret-right': CaretRight,
+  hospital: Buildings,
+  home: House,
+  more: DotsThree,
+  'sign-out': SignOut,
+  user: User,
   close: X,
   search: MagnifyingGlass,
   info: Info,
