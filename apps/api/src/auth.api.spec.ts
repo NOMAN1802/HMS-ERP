@@ -223,4 +223,55 @@ describe('auth over HTTP', () => {
     });
     expect(other.headers.get('access-control-allow-origin')).toBeNull();
   });
+
+  describe('PATCH /auth/preferences (FR-I18N-001)', () => {
+    async function signedIn() {
+      const user = await seedLogin(1);
+      const res = await login(user.username);
+      const { csrfToken } = await res.json();
+      return { user, cookie: cookieFrom(res), csrfToken };
+    }
+
+    function patch(cookie: string, csrfToken: string | null, body: unknown) {
+      return fetch(`${base}/auth/preferences`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: cookie,
+          Origin: WEB,
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+    }
+
+    it('changes the preferred language and it survives the next session read', async () => {
+      const { user, cookie, csrfToken } = await signedIn();
+      const changed = await patch(cookie, csrfToken, { preferredLang: 'en' });
+      expect(changed.status).toBe(200);
+      expect((await changed.json()).user.preferredLang).toBe('en');
+
+      const session = await fetch(`${base}/auth/session`, { headers: { Cookie: cookie } });
+      expect((await session.json()).user.preferredLang).toBe('en');
+      const row = await prisma.userAccount.findUnique({ where: { id: user.id } });
+      expect(row?.preferredLang).toBe('en');
+    });
+
+    it('rejects an unsupported language', async () => {
+      const { cookie, csrfToken } = await signedIn();
+      const res = await patch(cookie, csrfToken, { preferredLang: 'fr' });
+      expect(res.status).toBe(422);
+    });
+
+    it('requires the CSRF token', async () => {
+      const { cookie } = await signedIn();
+      const res = await patch(cookie, null, { preferredLang: 'en' });
+      expect(res.status).toBe(403);
+    });
+
+    it('requires a session', async () => {
+      const res = await patch('', null, { preferredLang: 'en' });
+      expect(res.status).toBe(401);
+    });
+  });
 });

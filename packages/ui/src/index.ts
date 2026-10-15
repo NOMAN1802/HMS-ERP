@@ -26,3 +26,22 @@ export {
 } from './primitives/Toast.js';
 export { announce } from './hooks/announcer.js';
 export { useControllableState } from './hooks/use-controllable-state.js';
+export {
+  AppShell,
+  type AppShellProps,
+  type NavItem,
+  type ShellLinkProps,
+} from './layouts/AppShell.js';
+export { AuthLayout, type AuthLayoutProps } from './layouts/AuthLayout.js';
+export { PageLayout, type PageLayoutProps } from './layouts/PageLayout.js';
+export {
+  LanguageSwitch,
+  type LanguageOption,
+  type LanguageSwitchProps,
+} from './patterns/LanguageSwitch.js';
+export { DesktopOnlyNotice, type DesktopOnlyNoticeProps } from './patterns/DesktopOnlyNotice.js';
+export {
+  SessionExpiryDialog,
+  type SessionExpiryDialogProps,
+} from './patterns/SessionExpiryDialog.js';
+export { Alert, type AlertProps, type AlertTone } from './patterns/Alert.js';

@@ -8,7 +8,7 @@
     "dev": "next dev --port 3100",
     "start": "next start --port 3100",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app e2e",
+    "lint": "eslint app src e2e",
     "test": "vitest run --passWithNoTests",
     "test:e2e": "playwright test"
   },
@@ -16,7 +16,9 @@
     "@hms/contracts": "workspace:*",
     "@hms/i18n": "workspace:*",
     "@hms/ui": "workspace:*",
+    "@tanstack/react-query": "5.104.1",
     "next": "16.4.0",
+    "next-intl": "4.14.9",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

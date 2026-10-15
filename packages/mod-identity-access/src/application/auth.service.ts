@@ -2,7 +2,12 @@
 // ADR-004). Pre-hospital events go to auth_event; once a hospital is bound, the hospital's own
 // audit trail also records the login (decision 1 of the T-ACC-01 plan).
 import { Inject, Injectable } from '@nestjs/common';
-import type { LoginRequest, MembershipSummary, SessionResponse } from '@hms/contracts';
+import type {
+  LoginRequest,
+  MembershipSummary,
+  SessionResponse,
+  UpdatePreferencesRequest,
+} from '@hms/contracts';
 import { withTenant, type PrismaClient } from '@hms/database';
 import { DomainError, type Clock } from '@hms/domain-kernel';
 import { appendAuditEvent, PRISMA } from '@hms/platform';
@@ -31,6 +36,7 @@ import {
   recordFailedLogin,
   resetFailedLogins,
   revokeSession,
+  setPreferredLang,
   touchSession,
   type MembershipRecord,
   type UserRecord,
@@ -180,6 +186,15 @@ export class AuthService {
     if (!session) throw new DomainError('UNAUTHENTICATED', 'Session ended');
     const memberships = await this.activeMemberships(user.id);
     return this.toResponse(user, memberships, ctx.membershipId, token, session);
+  }
+
+  async updatePreferences(
+    ctx: AuthContext,
+    input: UpdatePreferencesRequest,
+    token: string,
+  ): Promise<SessionResponse> {
+    await setPreferredLang(this.prisma, ctx.userId, input.preferredLang);
+    return this.describeSession(ctx, token);
   }
 
   async logout(ctx: AuthContext, meta: RequestMeta): Promise<void> {

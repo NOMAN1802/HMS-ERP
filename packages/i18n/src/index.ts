@@ -1,5 +1,19 @@
 // Message catalogs (bn-BD, en) and formatters for digits, dates and money (ADR-017, C-025).
-// Bangla strings are proposals until a native speaker reviews them (A1).
-export const locales = ['en', 'bn-BD'] as const;
-export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = 'en';
+// Bangla strings are proposals until a native speaker reviews them (A1, Q-050).
+import { bnBD } from './messages/bn-BD.js';
+import { en, type Messages } from './messages/en.js';
+import type { Locale } from './locale.js';
+
+export { defaultLocale, htmlLang, isLocale, locales, type Locale } from './locale.js';
+export { toLocaleDigits } from './digits.js';
+export {
+  formatMoney,
+  formatNumber,
+  groupLakhCrore,
+  type CurrencySymbol,
+  type MoneyFormatOptions,
+} from './numbers.js';
+export { formatDate, formatDateTime, type DateFormatOptions } from './dates.js';
+export type { Messages } from './messages/en.js';
+
+export const messages: Record<Locale, Messages> = { en, 'bn-BD': bnBD };
