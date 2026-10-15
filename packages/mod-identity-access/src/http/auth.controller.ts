@@ -1,13 +1,15 @@
 // /api/v1/auth endpoints (UC-ACC-01). The session token only ever travels in the HttpOnly
 // cookie; the response body carries the CSRF token and what the UI needs to render.
-import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Patch, Post, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import {
   loginRequestSchema,
   selectMembershipRequestSchema,
+  updatePreferencesRequestSchema,
   type LoginRequest,
   type SelectMembershipRequest,
   type SessionResponse,
+  type UpdatePreferencesRequest,
 } from '@hms/contracts';
 import { ZodBodyPipe } from '@hms/platform';
 import { AuthService, type IssuedSession, type RequestMeta } from '../application/auth.service.js';
@@ -64,6 +66,15 @@ export class AuthController {
     const ctx = getAuthContext(request);
     const issued = await this.auth.selectMembership(ctx, body.membershipId, metaOf(request));
     return this.issue(response, issued);
+  }
+
+  @AllowWithoutTenant()
+  @Patch('preferences')
+  updatePreferences(
+    @Body(new ZodBodyPipe(updatePreferencesRequestSchema)) body: UpdatePreferencesRequest,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<SessionResponse> {
+    return this.auth.updatePreferences(getAuthContext(request), body, getSessionToken(request));
   }
 
   @AllowWithoutTenant()

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { loginRequestSchema, sessionResponseSchema } from './auth.js';
+import {
+  loginRequestSchema,
+  sessionResponseSchema,
+  updatePreferencesRequestSchema,
+} from './auth.js';
 
 describe('loginRequestSchema', () => {
   it('trims the username', () => {
@@ -29,5 +33,19 @@ describe('sessionResponseSchema', () => {
       absoluteExpiresAt: '2026-10-14T21:00:00.000Z',
     });
     expect(parsed.activeMembershipId).toBeNull();
+  });
+});
+
+describe('updatePreferencesRequestSchema', () => {
+  it('accepts the two supported languages', () => {
+    expect(updatePreferencesRequestSchema.parse({ preferredLang: 'bn-BD' }).preferredLang).toBe(
+      'bn-BD',
+    );
+    expect(updatePreferencesRequestSchema.parse({ preferredLang: 'en' }).preferredLang).toBe('en');
+  });
+
+  it('rejects any other language', () => {
+    expect(updatePreferencesRequestSchema.safeParse({ preferredLang: 'fr' }).success).toBe(false);
+    expect(updatePreferencesRequestSchema.safeParse({}).success).toBe(false);
   });
 });

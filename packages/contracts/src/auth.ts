@@ -32,3 +32,9 @@ export const sessionResponseSchema = z.object({
   absoluteExpiresAt: z.iso.datetime(),
 });
 export type SessionResponse = z.infer<typeof sessionResponseSchema>;
+
+// FR-I18N-001: the interface language is a per-user preference stored on the server.
+export const updatePreferencesRequestSchema = z.object({
+  preferredLang: z.enum(['bn-BD', 'en']),
+});
+export type UpdatePreferencesRequest = z.infer<typeof updatePreferencesRequestSchema>;

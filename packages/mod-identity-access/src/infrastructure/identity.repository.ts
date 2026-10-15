@@ -74,6 +74,18 @@ export async function resetFailedLogins(prisma: PrismaClient, userId: string): P
   await prisma.userAccount.update({ where: { id: userId }, data: { failedAttempts: 0 } });
 }
 
+/** `bn-BD` is stored as the enum value `bn_BD` (Prisma enum names cannot contain a hyphen). */
+export async function setPreferredLang(
+  prisma: PrismaClient,
+  userId: string,
+  preferredLang: 'bn-BD' | 'en',
+): Promise<void> {
+  await prisma.userAccount.update({
+    where: { id: userId },
+    data: { preferredLang: preferredLang === 'bn-BD' ? 'bn_BD' : 'en', version: { increment: 1 } },
+  });
+}
+
 export async function listMembershipsForUser(
   prisma: PrismaClient,
   userId: string,
