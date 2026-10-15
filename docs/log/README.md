@@ -58,3 +58,4 @@ Where it can fail, which logs or queries to check, and how to reproduce locally.
 | 2026-10-14 | [T-ACC-01: login, sessions and CSRF](2026-10-14-T-ACC-01-login.md)                  |
 | 2026-10-14 | [Day summary](2026-10-14-day-summary.md)                                            |
 | 2026-10-15 | [T-UI-01 (decisions): UI foundation](2026-10-15-T-UI-01-ui-foundation-decisions.md) |
+| 2026-10-15 | [T-UI-01 S1: design tokens, themes and fonts](2026-10-15-T-UI-01-tokens.md)         |

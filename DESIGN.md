@@ -46,7 +46,7 @@ A tinted-neutral system with one primary. Values below are the established seed 
 ### Neutral
 
 - **Mist 50** (`#f9fbfb`): page background. **White**: data surfaces (cards, inputs, tables) so print preview matches the screen.
-- **Mist 200** (`#e3e7e8`): decorative dividers and card edges. **Mist 500 range** (exact value fixed in T-UI-01 to reach 3:1): input and outlined-button borders.
+- **Mist 200** (`#e3e7e8`): decorative dividers and card edges. **Mist 500** (`#67787c`, 4.6:1 on white and 4.5:1 on the page background): input and outlined-button borders.
 - **Mist 900** (`#161b1d`): body text (16.7:1). **Mist 600** (`#4b585b`): secondary text (7.4:1). **Deep Teal Ink** (teal-950 `#022f2e`): headings (14.5:1). No pure black or pure white text.
 
 ### Status (soft fills, text and icon in the dark shade)

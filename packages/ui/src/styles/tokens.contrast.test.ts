@@ -9,11 +9,18 @@ import { describe, expect, it } from 'vitest';
 const stylesDir = fileURLToPath(new URL('./', import.meta.url));
 const read = (name: string): string => readFileSync(`${stylesDir}${name}`, 'utf8');
 
+const HEX_COLOR = /^#[0-9a-f]{6}$/i;
+
 // Only plain hex values are parsed: tokens are the one place color literals may live (ADR-022).
 function parseTokens(css: string): Map<string, string> {
   const tokens = new Map<string, string>();
-  for (const match of css.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
-    tokens.set(match[1] as string, (match[2] as string).toLowerCase());
+  for (const rawLine of css.split('\n')) {
+    const line = rawLine.trim();
+    const separator = line.indexOf(': ');
+    const end = line.indexOf(';');
+    if (!line.startsWith('--') || separator < 0 || end < separator) continue;
+    const value = line.slice(separator + 2, end).trim();
+    if (HEX_COLOR.test(value)) tokens.set(line.slice(2, separator), value.toLowerCase());
   }
   return tokens;
 }

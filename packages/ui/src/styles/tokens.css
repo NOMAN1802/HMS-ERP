@@ -10,8 +10,7 @@
 @theme {
   --font-*: initial;
   --font-heading: 'TikTok Sans Variable', 'Noto Sans Bengali Variable', system-ui, sans-serif;
-  --font-body:
-    'Geist Variable', 'Tiro Bangla', 'Noto Sans Bengali Variable', system-ui, sans-serif;
+  --font-body: 'Geist Variable', 'Tiro Bangla', 'Noto Sans Bengali Variable', system-ui, sans-serif;
   --font-ui: 'Geist Variable', 'Noto Sans Bengali Variable', system-ui, sans-serif;
 
   /* One radius scale: controls 6 px, panels 8 px, pills only for status badges */

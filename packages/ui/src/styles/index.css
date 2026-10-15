@@ -3,6 +3,7 @@
  * `@import 'tailwindcss'` (T-UI-01 S1, ADR-022).
  * Light is the default theme; dark is opt-in through data-theme="dark" only.
  */
+@import './fonts.css';
 @import './tokens.css';
 @import './theme-light.css';
 @import './theme-dark.css';
