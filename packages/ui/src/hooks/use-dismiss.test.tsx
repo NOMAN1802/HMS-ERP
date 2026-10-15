@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -43,5 +43,16 @@ describe('useDismiss', () => {
     await user.keyboard('{Escape}');
     expect(upper).toHaveBeenCalledTimes(1);
     expect(lower).not.toHaveBeenCalled();
+  });
+
+  it('ignores Escape that belongs to an input method', () => {
+    const onDismiss = vi.fn();
+    render(<Overlay label="inside" onDismiss={onDismiss} />);
+    fireEvent.keyDown(document.body, { key: 'Escape', isComposing: true });
+    expect(onDismiss).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: 'Escape', keyCode: 229 });
+    expect(onDismiss).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });

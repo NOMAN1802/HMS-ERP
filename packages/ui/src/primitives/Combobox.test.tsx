@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { Combobox, type ComboboxOption } from './Combobox.js';
+import { Dialog } from './Dialog.js';
 
 const OPTIONS: ComboboxOption[] = [
   { id: 'p1', label: 'Rahim Uddin', description: 'MRN-000123' },
@@ -58,7 +59,7 @@ describe('Combobox', () => {
     );
     await user.keyboard('{Enter}');
 
-    expect(onValueChange).toHaveBeenCalledWith('p1', OPTIONS[0]);
+    expect(onValueChange).toHaveBeenCalledWith(OPTIONS[0]);
     expect((input as HTMLInputElement).value).toBe('Rahim Uddin');
     expect(input.getAttribute('aria-expanded')).toBe('false');
   });
@@ -120,5 +121,108 @@ describe('Combobox', () => {
     await user.type(screen.getByRole('combobox'), 'ra');
     expect(screen.getByText('Searching').getAttribute('role')).toBe('status');
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+});
+
+describe('Combobox review findings', () => {
+  const base = {
+    'aria-label': 'Search patient',
+    listLabel: 'Patients',
+    emptyLabel: 'No patients found',
+    loadingLabel: 'Searching',
+    announceResults: (count: number) => `${count} results`,
+  };
+
+  it('does not select a hidden stale option while new results are loading', async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    const view = render(<Combobox {...base} options={OPTIONS} onValueChange={onValueChange} />);
+    const input = screen.getByRole('combobox', { name: 'Search patient' });
+    await user.type(input, 'rah');
+
+    // The owner starts a new search and keeps the old options until the response arrives.
+    view.rerender(<Combobox {...base} options={OPTIONS} loading onValueChange={onValueChange} />);
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(onValueChange).not.toHaveBeenCalled();
+    expect(input.getAttribute('aria-activedescendant')).toBeNull();
+  });
+
+  it('starts from no active option when new results arrive', async () => {
+    const user = userEvent.setup();
+    const view = render(<Combobox {...base} options={OPTIONS} />);
+    const input = screen.getByRole('combobox', { name: 'Search patient' });
+    await user.type(input, 'rah');
+    await user.keyboard('{ArrowDown}');
+    expect(input.getAttribute('aria-activedescendant')).not.toBeNull();
+
+    // A different result set must not inherit the old position (Enter would pick its first item).
+    const fresh: ComboboxOption[] = [
+      { id: 'p9', label: 'Karim Ahmed' },
+      { id: 'p10', label: 'Karima Begum' },
+    ];
+    view.rerender(<Combobox {...base} options={fresh} />);
+    expect(input.getAttribute('aria-activedescendant')).toBeNull();
+  });
+
+  it('shows the label of a selection set by the parent', () => {
+    const view = render(<Combobox {...base} options={OPTIONS} value={null} />);
+    const input = screen.getByRole('combobox', { name: 'Search patient' }) as HTMLInputElement;
+    expect(input.value).toBe('');
+
+    view.rerender(<Combobox {...base} options={[]} value={OPTIONS[0] as ComboboxOption} />);
+    expect(input.value).toBe('Rahim Uddin');
+  });
+
+  it('clears the shown name when the parent clears the selection', () => {
+    const view = render(
+      <Combobox {...base} options={OPTIONS} value={OPTIONS[0] as ComboboxOption} />,
+    );
+    const input = screen.getByRole('combobox', { name: 'Search patient' }) as HTMLInputElement;
+    expect(input.value).toBe('Rahim Uddin');
+
+    view.rerender(<Combobox {...base} options={OPTIONS} value={null} />);
+    expect(input.value).toBe('');
+  });
+
+  it('keeps what the user types after a selection and reports the cleared selection', async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(
+      <Combobox
+        {...base}
+        options={OPTIONS}
+        defaultValue={OPTIONS[0] as ComboboxOption}
+        onValueChange={onValueChange}
+      />,
+    );
+    const input = screen.getByRole('combobox', { name: 'Search patient' }) as HTMLInputElement;
+    expect(input.value).toBe('Rahim Uddin');
+
+    await user.type(input, 'x');
+    expect(input.value).toBe('Rahim Uddinx');
+    expect(onValueChange).toHaveBeenCalledWith(null);
+  });
+
+  it('leaves Escape to the input method while composing', () => {
+    render(<Combobox {...base} options={OPTIONS} />);
+    const input = screen.getByRole('combobox', { name: 'Search patient' });
+    fireEvent.change(input, { target: { value: 'ra' } });
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.keyDown(input, { key: 'Escape', isComposing: true });
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('does not close a dialog around it when Escape belongs to the input method', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <Dialog open onOpenChange={onOpenChange} title="Find patient" closeLabel="Close">
+        <Combobox {...base} options={OPTIONS} />
+      </Dialog>,
+    );
+    const input = screen.getByRole('combobox', { name: 'Search patient' });
+    fireEvent.keyDown(input, { key: 'Escape', isComposing: true });
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 });

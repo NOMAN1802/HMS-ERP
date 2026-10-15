@@ -30,6 +30,9 @@ export function useDismiss({
     const overlay = registerOverlay();
 
     function onKeyDown(event: KeyboardEvent): void {
+      // While an input method is composing (Bangla phonetic input), Escape cancels the
+      // composition. keyCode 229 is how some browsers report that key. It is not ours to handle.
+      if (event.isComposing || event.keyCode === 229) return;
       if (closeOnEscape && event.key === 'Escape' && overlay.isTop()) {
         event.stopPropagation();
         onDismissRef.current();

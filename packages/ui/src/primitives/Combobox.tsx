@@ -24,17 +24,12 @@ import {
 } from 'react';
 import { announce, ensureAnnouncer } from '../hooks/announcer.js';
 import { moveIndex } from '../hooks/navigation.js';
-import { useControllableState } from '../hooks/use-controllable-state.js';
 import { useDismiss } from '../hooks/use-dismiss.js';
 import { cx } from '../utils/cx.js';
 import { countGraphemes } from '../utils/graphemes.js';
+import { type ComboboxOption, useComboboxSelection } from './combobox-selection.js';
 
-export interface ComboboxOption {
-  id: string;
-  label: string;
-  description?: string;
-  disabled?: boolean;
-}
+export type { ComboboxOption } from './combobox-selection.js';
 
 type NativeInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -51,14 +46,18 @@ type NativeInputProps = Omit<
 
 export interface ComboboxProps extends NativeInputProps {
   options: readonly ComboboxOption[];
-  /** Selected option id (controlled). */
-  value?: string | null;
-  defaultValue?: string | null;
-  onValueChange?: (id: string | null, option: ComboboxOption | null) => void;
+  /**
+   * The selected option (controlled). The whole option is passed, not just its id, because the
+   * field must be able to show its label even when it is not in the current results.
+   */
+  value?: ComboboxOption | null;
+  defaultValue?: ComboboxOption | null;
+  onValueChange?: (option: ComboboxOption | null) => void;
   /** Called with the typed text once it is final (after composition ends). */
   onQueryChange?: (query: string) => void;
   /** Called on Enter when no option is active (scanner input, free search). */
   onSubmitQuery?: (query: string) => void;
+  /** Text shown at first when nothing is selected. A selection's label wins over it. */
   initialQuery?: string;
   /** Minimum number of characters (grapheme clusters) before the list opens. */
   minQueryLength?: number;
@@ -85,25 +84,40 @@ type KeyAction =
 
 interface KeyContext {
   key: string;
+  /** The popup is open (it may be showing only a loading or empty message). */
   open: boolean;
+  /** The option list is on screen: open, has options and is not loading. */
+  listVisible: boolean;
   hasActiveOption: boolean;
   hasText: boolean;
   canSubmit: boolean;
 }
 
+function arrowAction(direction: 'down' | 'up', { open, listVisible }: KeyContext): KeyAction {
+  if (!open) return direction === 'down' ? 'open-first' : 'open-last';
+  // Results hidden behind the loading state cannot be moved through.
+  if (!listVisible) return 'none';
+  return direction === 'down' ? 'next' : 'previous';
+}
+
+function enterAction({ listVisible, hasActiveOption, hasText, canSubmit }: KeyContext): KeyAction {
+  // Never pick an option the user cannot see.
+  if (listVisible && hasActiveOption) return 'select';
+  return hasText && canSubmit ? 'submit' : 'none';
+}
+
 /** Which action a key press means in the current state. Pure, so the contract is easy to read. */
-function keyAction({ key, open, hasActiveOption, hasText, canSubmit }: KeyContext): KeyAction {
-  switch (key) {
+function keyAction(context: KeyContext): KeyAction {
+  switch (context.key) {
     case 'ArrowDown':
-      return open ? 'next' : 'open-first';
+      return arrowAction('down', context);
     case 'ArrowUp':
-      return open ? 'previous' : 'open-last';
+      return arrowAction('up', context);
     case 'Enter':
-      if (open && hasActiveOption) return 'select';
-      return hasText && canSubmit ? 'submit' : 'none';
+      return enterAction(context);
     case 'Escape':
       // While open, the dismiss handler closes the list; only a closed list clears the field.
-      return !open && hasText ? 'clear' : 'none';
+      return !context.open && context.hasText ? 'clear' : 'none';
     case 'Tab':
       return 'close';
     default:
@@ -118,7 +132,7 @@ export function Combobox({
   onValueChange,
   onQueryChange,
   onSubmitQuery,
-  initialQuery = '',
+  initialQuery,
   minQueryLength = 1,
   loading = false,
   invalid = false,
@@ -132,16 +146,14 @@ export function Combobox({
   ...inputProps
 }: ComboboxProps) {
   const listboxId = useId();
-  const [text, setText] = useState(initialQuery);
-  const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [selectedId, setSelectedId] = useControllableState<string | null>({
+  const { selected, selectedId, text, setText, changeSelection } = useComboboxSelection({
     value,
     defaultValue,
-    onChange: (next) => {
-      onValueChange?.(next, options.find((option) => option.id === next) ?? null);
-    },
+    onValueChange,
+    initialQuery,
   });
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const composing = useRef(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
@@ -179,6 +191,12 @@ export function Combobox({
     if (activeIndex >= 0) optionRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex]);
 
+  // A different result set (or a new search starting) never inherits the old active position.
+  const optionsKey = options.map((option) => option.id).join('|');
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [optionsKey, loading]);
+
   useDismiss({
     enabled: open,
     onDismiss: () => {
@@ -197,25 +215,30 @@ export function Combobox({
   function onChange(event: ChangeEvent<HTMLInputElement>): void {
     const next = event.target.value;
     setText(next);
-    if (selectedId !== null) setSelectedId(null);
+    // Typing over a selection ends it: the field and the selection must never disagree.
+    if (selected !== null) changeSelection(null);
     if (!composing.current) handleQuery(next);
   }
 
   function selectOption(option: ComboboxOption): void {
     if (option.disabled) return;
-    setSelectedId(option.id);
+    changeSelection(option);
     setText(option.label);
     setOpen(false);
     setActiveIndex(-1);
   }
 
+  const showList = open && options.length > 0 && !loading;
+  const activeOption = showList ? options[activeIndex] : undefined;
+
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
     // The input method owns these keys while composing.
     if (composing.current || event.nativeEvent.isComposing) return;
-    const active = options[activeIndex];
+    const active = activeOption;
     const action = keyAction({
       key: event.key,
       open,
+      listVisible: showList,
       hasActiveOption: Boolean(active),
       hasText: text !== '',
       canSubmit: Boolean(onSubmitQuery),
@@ -254,7 +277,7 @@ export function Combobox({
         // Second Escape clears the field. Stop it here so a dialog around us stays open.
         event.stopPropagation();
         setText('');
-        setSelectedId(null);
+        if (selected !== null) changeSelection(null);
         onQueryChange?.('');
         break;
       case 'close':
@@ -264,9 +287,6 @@ export function Combobox({
         break;
     }
   }
-
-  const activeOption = options[activeIndex];
-  const showList = open && options.length > 0 && !loading;
 
   return (
     <div
@@ -285,7 +305,7 @@ export function Combobox({
         aria-expanded={open}
         aria-controls={showList ? listboxId : undefined}
         aria-autocomplete="list"
-        aria-activedescendant={showList && activeOption ? `${listboxId}-${activeIndex}` : undefined}
+        aria-activedescendant={activeOption ? `${listboxId}-${activeIndex}` : undefined}
         aria-invalid={invalid || undefined}
         value={text}
         onChange={onChange}

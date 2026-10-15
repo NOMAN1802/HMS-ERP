@@ -236,7 +236,7 @@ function ComboboxDemo() {
             loadingLabel="Searching"
             announceResults={(count) => `${count} patients found`}
             onQueryChange={search}
-            onValueChange={(_, option) => setSelected(option?.label ?? 'none')}
+            onValueChange={(option) => setSelected(option?.label ?? 'none')}
             onSubmitQuery={setSubmitted}
             {...aria}
           />

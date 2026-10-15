@@ -44,14 +44,26 @@ The in-house component layer of ADR-022. A developer can now build a screen from
 
 The first one is why ADR-022 requires a browser check per primitive and not only jsdom.
 
+## Review findings fixed after the pull request was opened
+
+Three defects reported in review of PR #6. Each was reproduced with a failing test first (8 red), then fixed.
+
+| Finding                                                                                                                                                                                        | Cause                                                                                                                                            | Fix                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Search could select a wrong patient while results were loading: after "rah", changing to "kar" and pressing ArrowDown then Enter selected "Rahim Uddin" from results hidden behind "Searching" | Key handling used `options[activeIndex]` without checking the list was on screen, and the active index survived a new result set                 | Arrow keys and Enter act only on a visible list; the active index resets when the result set or loading state changes. Enter with no visible active option submits the typed text                                   |
+| The field ignored changes made by its parent: setting a patient left it empty, clearing left the old name                                                                                      | The text was local state that never followed `value`; `value` was an id, so the label was unknown when the option was not in the current results | `value` is now the selected option object, and the text follows an outside change (`useComboboxSelection`). Typing over a selection ends it and reports `null`, so the shown name and the selection cannot disagree |
+| Escape interrupted Bangla composition and could close an overlay or open the discard dialog                                                                                                    | `useDismiss` listens on the document and did not look at composition state                                                                       | Escape with `isComposing` (or keyCode 229) is ignored by every overlay; the input method handles it first                                                                                                           |
+
+API change inside this unreleased PR: `Combobox` `value`, `defaultValue` and `onValueChange` now carry the option object, not an id.
+
 ## Verification
 
 | Command                                      | Result                                                                                                                                                                       |
 | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm --filter @hms/config-eslint test`      | 16 passed; mutation check (raw-widget selector disabled) failed 5, restored                                                                                                  |
-| `pnpm --filter @hms/ui test`                 | 121 passed (18 files)                                                                                                                                                        |
+| `pnpm --filter @hms/ui test`                 | 129 passed (18 files)                                                                                                                                                        |
 | `pnpm --filter @hms/web test:e2e`            | 11 passed (axe on the gallery, with the dialog open and with a toast; keyboard flows for dialog, menu, tabs, combobox; Bangla query; phone width has no horizontal overflow) |
-| `pnpm turbo run lint typecheck build test`   | 50 of 50 tasks passed (contracts 7, config-eslint 16, kernel 2, database 14, ui 121, platform 6, identity 42, api 11 tests)                                                  |
+| `pnpm turbo run lint typecheck build test`   | 50 of 50 tasks passed (contracts 7, config-eslint 16, kernel 2, database 14, ui 129, platform 6, identity 42, api 11 tests)                                                  |
 | `pnpm boundaries:check`                      | No violations                                                                                                                                                                |
 | Visual pass in Chromium at 1366 and 390 wide | Bangla names shape correctly, no overflow, focus ring and overlay shadow as designed                                                                                         |
 
@@ -59,7 +71,6 @@ The first one is why ADR-022 requires a browser check per primitive and not only
 
 - No exit animations (overlays unmount immediately); entry motion is a short fade and 0.97 scale, removed for reduced motion.
 - Tooltip, Select (listbox), Checkbox, Radio, Switch and DateField are not built yet.
-- The Combobox keeps its own display text; a controlled `value` does not rewrite the text from a later option list.
 - The Menu and Combobox popups use fixed positioning and do not portal; inside an element with a CSS transform they could mis-position.
 - The gallery contains English demo strings (no i18n catalogs exist yet); Bangla sample names use escapes.
 - `packages/i18n` formatters (lakh and crore) are the next task, T-I18N-01.
