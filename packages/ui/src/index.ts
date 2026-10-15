@@ -1,3 +1,3 @@
-// Design-system components (Tailwind + accessible primitives). The component library is chosen
-// by the design-system spike T-UI-01 (shadcn vs React Aria).
+// Design-system components, built in-house on semantic HTML (ADR-022). Design tokens and base
+// styles are exported as `@hms/ui/styles.css`.
 export {};

@@ -1,0 +1,12 @@
+/*
+ * Self-hosted fonts (ADR-017 item 5, ADR-022 section 5, C-056). Served from our own origin by
+ * the build; there is no font CDN at runtime. Each file carries unicode-range subsets, so the
+ * browser downloads only the scripts a page actually uses.
+ *
+ * Family names must match the stacks in tokens.css: 'Geist Variable', 'TikTok Sans Variable',
+ * 'Noto Sans Bengali Variable', 'Tiro Bangla'. Tiro Bangla is Regular only (it has no bold).
+ */
+@import '@fontsource-variable/geist/wght.css';
+@import '@fontsource-variable/tiktok-sans/wght.css';
+@import '@fontsource-variable/noto-sans-bengali/wght.css';
+@import '@fontsource/tiro-bangla/400.css';
