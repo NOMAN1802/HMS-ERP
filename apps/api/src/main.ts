@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { configureApp } from './http/configure-app.js';
 
 // Local development reads the repository .env; real environments set variables directly,
@@ -14,7 +15,22 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   configureApp(app, process.env.CORS_ORIGINS);
   app.enableShutdownHooks();
-  await app.listen(Number(process.env.API_PORT ?? 4100));
+
+  const port = Number(process.env.API_PORT ?? 4100);
+  // ADR-021 fixes the production API origin; API_PUBLIC_URL lets staging override it.
+  const productionUrl = process.env.API_PUBLIC_URL ?? 'https://healthcareapi.bytespate.com';
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('HMS API')
+    .setDescription('Hospital ERP SaaS API documentation')
+    .setVersion('1.0')
+    .addServer(`http://localhost:${port}`, 'Local development')
+    .addServer(productionUrl, 'Production')
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, swaggerDocument);
+
+  await app.listen(port);
 }
 
 await bootstrap();

@@ -61,3 +61,5 @@ Where it can fail, which logs or queries to check, and how to reproduce locally.
 | 2026-10-15 | [T-UI-01 S1: design tokens, themes and fonts](2026-10-15-T-UI-01-tokens.md)            |
 | 2026-10-15 | [T-UI-01 S2 to S5: guardrails, hooks, primitives](2026-10-15-T-UI-01-primitives.md)    |
 | 2026-10-15 | [T-I18N-01 and T-UI-02: catalogs, app shell, sign-in](2026-10-15-T-UI-02-app-shell.md) |
+| 2026-10-15 | [API status route and Swagger docs](2026-10-15-api-swagger-docs.md)                   |
+| 2026-10-15 | [Swagger: dev and production servers in one doc](2026-10-15-swagger-dev-prod-servers.md) |
