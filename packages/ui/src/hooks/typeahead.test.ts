@@ -32,6 +32,8 @@ describe('findTypeaheadIndex', () => {
   });
 
   it('matches Bangla text by its first character', () => {
-    expect(findTypeaheadIndex(['করিম', 'রহিম'], 'র', 0)).toBe(1);
+    expect(
+      findTypeaheadIndex(['\u0995\u09B0\u09BF\u09AE', '\u09B0\u09B9\u09BF\u09AE'], '\u09B0', 0),
+    ).toBe(1);
   });
 });

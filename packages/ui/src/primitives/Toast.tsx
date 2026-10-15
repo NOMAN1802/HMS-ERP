@@ -152,20 +152,24 @@ export function ToastProvider({
       {children}
       {toasts.length > 0 && typeof document !== 'undefined'
         ? createPortal(
-            <ol
+            // A labelled region landmark, so notifications are never "content outside landmarks"
+            // (axe region rule, NFR-ACC-001).
+            <section
               data-hms-keep-active=""
               aria-label={regionLabel}
-              className="fixed bottom-4 end-4 z-60 flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
+              className="fixed bottom-4 end-4 z-60 w-[min(24rem,calc(100vw-2rem))]"
             >
-              {toasts.map((toast) => (
-                <ToastItem
-                  key={toast.id}
-                  toast={toast}
-                  closeLabel={closeLabel}
-                  onDismiss={dismiss}
-                />
-              ))}
-            </ol>,
+              <ol className="flex flex-col gap-2">
+                {toasts.map((toast) => (
+                  <ToastItem
+                    key={toast.id}
+                    toast={toast}
+                    closeLabel={closeLabel}
+                    onDismiss={dismiss}
+                  />
+                ))}
+              </ol>
+            </section>,
             document.body,
           )
         : null}

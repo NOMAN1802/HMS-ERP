@@ -85,25 +85,25 @@ describe('Combobox', () => {
   it('does not query or act on keys while an input method is composing', () => {
     const { input, onQueryChange, onSubmitQuery } = setup();
     fireEvent.compositionStart(input);
-    fireEvent.change(input, { target: { value: 'র' } });
+    fireEvent.change(input, { target: { value: '\u09B0' } });
     expect(onQueryChange).not.toHaveBeenCalled();
 
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onSubmitQuery).not.toHaveBeenCalled();
 
-    fireEvent.change(input, { target: { value: 'রহিম' } });
+    fireEvent.change(input, { target: { value: '\u09B0\u09B9\u09BF\u09AE' } });
     fireEvent.compositionEnd(input);
     expect(onQueryChange).toHaveBeenCalledTimes(1);
-    expect(onQueryChange).toHaveBeenCalledWith('রহিম');
+    expect(onQueryChange).toHaveBeenCalledWith('\u09B0\u09B9\u09BF\u09AE');
   });
 
   it('counts the minimum query length in characters, not code units', async () => {
     const user = userEvent.setup();
     const { input } = setup({ minQueryLength: 2 });
     // RA + I-KAR: two code points, one character.
-    await user.type(input, 'রি');
+    await user.type(input, '\u09B0\u09BF');
     expect(input.getAttribute('aria-expanded')).toBe('false');
-    await user.type(input, 'ম');
+    await user.type(input, '\u09AE');
     expect(input.getAttribute('aria-expanded')).toBe('true');
   });
 

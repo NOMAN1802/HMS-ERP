@@ -69,9 +69,11 @@ function DialogSurface({
   const titleId = useId();
   const descriptionId = useId();
 
+  // Declared first: effect cleanups run in declaration order, so the page is no longer inert
+  // when the focus trap hands focus back to the opener (browsers refuse focus() on inert nodes).
+  useInertOutside(rootRef);
   useFocusTrap(panelRef, { active: true, initialFocusRef });
   useScrollLock(true);
-  useInertOutside(rootRef);
   useDismiss({
     enabled: true,
     onDismiss: () => onOpenChange(false),

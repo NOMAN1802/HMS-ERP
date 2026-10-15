@@ -66,6 +66,25 @@ describe('Dialog', () => {
     expect(document.body.hasAttribute('inert')).toBe(false);
   });
 
+  it('gives focus back only after the page behind is no longer inert', async () => {
+    // Browsers refuse focus() on an inert element; jsdom does not, so record the state instead.
+    const user = userEvent.setup();
+    render(<Harness />);
+    const opener = screen.getByRole('button', { name: 'Open' });
+    await user.click(opener);
+
+    const inertWhenFocused: boolean[] = [];
+    const focus = opener.focus.bind(opener);
+    vi.spyOn(opener, 'focus').mockImplementation((options) => {
+      inertWhenFocused.push(opener.closest('[inert]') !== null);
+      focus(options);
+    });
+    await user.keyboard('{Escape}');
+
+    expect(inertWhenFocused.length).toBeGreaterThan(0);
+    expect(inertWhenFocused.every((inert) => !inert)).toBe(true);
+  });
+
   it('closes from the close button and from a press on the backdrop', async () => {
     const user = userEvent.setup();
     render(<Harness />);

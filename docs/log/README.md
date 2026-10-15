@@ -59,3 +59,4 @@ Where it can fail, which logs or queries to check, and how to reproduce locally.
 | 2026-10-14 | [Day summary](2026-10-14-day-summary.md)                                            |
 | 2026-10-15 | [T-UI-01 (decisions): UI foundation](2026-10-15-T-UI-01-ui-foundation-decisions.md) |
 | 2026-10-15 | [T-UI-01 S1: design tokens, themes and fonts](2026-10-15-T-UI-01-tokens.md)         |
+| 2026-10-15 | [T-UI-01 S2 to S5: guardrails, hooks, primitives](2026-10-15-T-UI-01-primitives.md) |

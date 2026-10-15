@@ -35,11 +35,11 @@ afterEach(() => {
 });
 
 describe('Toast', () => {
-  it('shows a titled toast in a labelled list', async () => {
+  it('shows a titled toast in a labelled region', async () => {
     const user = userEvent.setup();
     setup();
     await user.click(screen.getByRole('button', { name: 'Notify' }));
-    const list = screen.getByRole('list', { name: 'Notifications' });
+    const list = screen.getByRole('region', { name: 'Notifications' });
     expect(list.textContent).toContain('Receipt printed');
     expect(list.textContent).toContain('RCPT-45');
   });
@@ -61,11 +61,11 @@ describe('Toast', () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     setup({ durationMs: 1000 });
     await user.click(screen.getByRole('button', { name: 'Notify' }));
-    expect(screen.getByRole('list', { name: 'Notifications' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Notifications' })).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1100);
     });
-    expect(screen.queryByRole('list', { name: 'Notifications' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Notifications' })).toBeNull();
   });
 
   it('keeps a danger toast until it is dismissed', async () => {
@@ -76,9 +76,9 @@ describe('Toast', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(60_000);
     });
-    expect(screen.getByRole('list', { name: 'Notifications' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Notifications' })).toBeTruthy();
     await user.click(screen.getByRole('button', { name: 'Dismiss' }));
-    expect(screen.queryByRole('list', { name: 'Notifications' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Notifications' })).toBeNull();
   });
 
   it('throws a clear error when used outside the provider', () => {

@@ -9,7 +9,7 @@ describe('countGraphemes', () => {
 
   it('counts a Bangla letter with its vowel sign as one character', () => {
     // RA + I-KAR is two code points but one character to a reader.
-    expect(countGraphemes('রি')).toBe(1);
-    expect(countGraphemes('রিম')).toBe(2);
+    expect(countGraphemes('\u09B0\u09BF')).toBe(1);
+    expect(countGraphemes('\u09B0\u09BF\u09AE')).toBe(2);
   });
 });
